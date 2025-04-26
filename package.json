@@ -1,0 +1,10 @@
+{
+  "name": "marktaskdown",
+  "version": "0.0.0",
+  "description": "A lightweight CLI for task management based on Markdown files",
+  "license": "MIT",
+  "author": "",
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
