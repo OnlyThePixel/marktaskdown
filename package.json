@@ -4,6 +4,15 @@
   "description": "A lightweight CLI for task management based on Markdown files",
   "license": "MIT",
   "author": "",
+  "type": "module",
+  "bin": {
+    "mtd": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/cli.js"
+  },
   "engines": {
     "node": ">=22.0.0"
   },
@@ -11,6 +20,7 @@
     "commander": "^13.1.0"
   },
   "devDependencies": {
+    "@types/node": "^22.15.2",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3"
   }
