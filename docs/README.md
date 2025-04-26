@@ -32,7 +32,7 @@ A lightweight CLI for managing tasks as Markdown files with YAML front-matter.
    - enquirer prompt:
      - Title (required)
      - Description (optional; opens `$EDITOR` if chosen)
-   - Generates slug (`kebab-case` of title; if clash, append `-1`, `-2`, …).
+   - Generates slug (`kebab-case` of title).
    - Creates `tasks/<slug>.md` with:
 
    ```

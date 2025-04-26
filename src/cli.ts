@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { initCommand } from "./commands/init.js";
+import { addCommand } from "./commands/add.js";
 
 const program = new Command();
 
@@ -24,5 +25,12 @@ program
   .command("init")
   .description("Initialize a tasks directory in the current folder")
   .action(initCommand);
+
+program
+  .command("add")
+  .description("Add a new task")
+  .argument("<title>", "Title of the task")
+  .option("-d, --description <description>", "Description of the task")
+  .action((title, options) => addCommand(title, options));
 
 program.parse();

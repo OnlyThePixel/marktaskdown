@@ -26,10 +26,20 @@ Creates a `/tasks` folder in your current directory.
 ### Add a New Task
 
 ```bash
-mtd add
+mtd add <title> [options]
 ```
 
-Interactive prompt to create a new task with title and optional description.
+Creates a new task with the specified title and optional description.
+
+Options:
+
+- `-d, --description <description>`: Add a description to the task
+
+Example:
+
+```bash
+mtd add "Implement new feature" --description "Add the ability to mark tasks as done"
+```
 
 ### List All Tasks
 
