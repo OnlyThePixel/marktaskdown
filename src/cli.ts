@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { initCommand } from "./commands/init.js";
 
 const program = new Command();
 
@@ -18,5 +19,10 @@ program.action(() => {
     '🚀 Type "mtd --help" to see what else I can do (spoiler: not much yet).'
   );
 });
+
+program
+  .command("init")
+  .description("Initialize a tasks directory in the current folder")
+  .action(initCommand);
 
 program.parse();
