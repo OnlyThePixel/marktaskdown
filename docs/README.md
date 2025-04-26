@@ -14,7 +14,7 @@ A lightweight CLI for managing tasks as Markdown files with YAML front-matter.
 - Language / Tooling: TypeScript, tsup (build), vitest (tests), eslint + prettier.
 - Arg parsing: **commander**.
 - Prompts / forms: **enquirer**.
-- Table & UI rendering: **ink** + **ink-table**.
+- Table & UI rendering: **ink**.
 - No dates, tags, or config file in MVP.
 - File naming: `<slug>.md` stored in `/tasks`.
 
@@ -102,7 +102,7 @@ end
 | 1      | Slug generator + YAML writer                                 | 3   |
 | 2      | `add` interactive form                                       | 4   |
 | 2      | Markdown file creation tests                                 | 3   |
-| 3      | `list` with Ink & ink-table                                  | 5   |
+| 3      | `list` with Ink                                              | 5   |
 | 4      | `done` interactive multi-select                              | 4   |
 | 4      | `delete` with archive folder                                 | 3   |
 | 5      | CLI help docs, README quick-start, packaging via tsup        | 3   |
