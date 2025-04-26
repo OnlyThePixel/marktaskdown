@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import { doneCommand } from "../src/commands/done.js";
-import * as enquirer from "enquirer";
+import { checkbox } from "@inquirer/prompts";
 
 vi.mock("fs", () => ({
   default: {
@@ -19,8 +19,8 @@ vi.mock("path", () => ({
   },
 }));
 
-vi.mock("enquirer", () => ({
-  prompt: vi.fn(),
+vi.mock("@inquirer/prompts", () => ({
+  checkbox: vi.fn(),
 }));
 
 describe("Done Command", () => {
@@ -114,20 +114,16 @@ describe("Done Command", () => {
         "---\ntitle: Task 1\nis_done: false\n---\n\nTask 1 description"
       );
 
-    // Mock prompt to return selected tasks
-    vi.mocked(enquirer.prompt).mockResolvedValueOnce({
-      selectedTasks: ["task-1.md"],
-    });
+    // Mock checkbox to return selected tasks
+    vi.mocked(checkbox).mockResolvedValueOnce(["task-1.md"]);
 
     await doneCommand();
 
-    expect(enquirer.prompt).toHaveBeenCalledWith({
-      type: "multiselect",
-      name: "selectedTasks",
+    expect(checkbox).toHaveBeenCalledWith({
       message: "Select tasks to mark as done",
       choices: [
-        { name: "task-1.md", value: "task-1.md", message: "Task 1" },
-        { name: "task-2.md", value: "task-2.md", message: "Task 2" },
+        { name: "Task 1", value: "task-1.md" },
+        { name: "Task 2", value: "task-2.md" },
       ],
     });
 
@@ -164,21 +160,17 @@ describe("Done Command", () => {
         "---\ntitle: Task 2\nis_done: false\n---\n\nTask 2 description"
       );
 
-    // Mock prompt to return selected tasks
-    vi.mocked(enquirer.prompt).mockResolvedValueOnce({
-      selectedTasks: ["task-2.md"],
-    });
+    // Mock checkbox to return selected tasks
+    vi.mocked(checkbox).mockResolvedValueOnce(["task-2.md"]);
 
     await doneCommand();
 
     expect(console.warn).toHaveBeenCalledWith(
       "⚠️ Warning: Could not parse task file: invalid-task.md"
     );
-    expect(enquirer.prompt).toHaveBeenCalledWith({
-      type: "multiselect",
-      name: "selectedTasks",
+    expect(checkbox).toHaveBeenCalledWith({
       message: "Select tasks to mark as done",
-      choices: [{ name: "task-2.md", value: "task-2.md", message: "Task 2" }],
+      choices: [{ name: "Task 2", value: "task-2.md" }],
     });
   });
 
@@ -201,11 +193,8 @@ describe("Done Command", () => {
       "---\ntitle: Task 1\nis_done: false\n---\n\nTask 1 description"
     );
 
-    // Mock the prompt function directly
-    const mockPrompt = vi.fn().mockResolvedValue({
-      selectedTasks: [],
-    });
-    vi.mocked(enquirer.prompt).mockImplementation(mockPrompt);
+    // Mock the checkbox function to return empty array
+    vi.mocked(checkbox).mockResolvedValueOnce([]);
 
     await doneCommand();
 

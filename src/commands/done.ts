@@ -1,8 +1,7 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
-import enquirer from "enquirer";
-const { prompt } = enquirer;
+import { checkbox } from "@inquirer/prompts";
 
 interface TaskFrontMatter {
   title: string;
@@ -13,10 +12,6 @@ interface TaskChoice {
   name: string;
   value: string;
   message: string;
-}
-
-interface TaskPromptResult {
-  selectedTasks: string[];
 }
 
 /**
@@ -82,20 +77,21 @@ export async function doneCommand(): Promise<void> {
   }
 
   // Prompt user to select tasks to mark as done
-  const result = await prompt<TaskPromptResult>({
-    type: "multiselect",
-    name: "selectedTasks",
+  const selectedTasks = await checkbox({
     message: "Select tasks to mark as done",
-    choices: undoneTasks,
+    choices: undoneTasks.map((task) => ({
+      name: task.message,
+      value: task.value,
+    })),
   });
 
-  if (!result.selectedTasks || result.selectedTasks.length === 0) {
+  if (!selectedTasks || selectedTasks.length === 0) {
     console.log("❌ No tasks selected.");
     return;
   }
 
   // Mark selected tasks as done
-  for (const filename of result.selectedTasks) {
+  for (const filename of selectedTasks) {
     const filePath = path.join(tasksDir, filename);
 
     try {

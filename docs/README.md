@@ -13,8 +13,8 @@ A lightweight CLI for managing tasks as Markdown files with YAML front-matter.
 - Runtime: Node 22 LTS
 - Language / Tooling: TypeScript, tsup (build), vitest (tests), eslint + prettier.
 - Arg parsing: **commander**.
-- Prompts / forms: **enquirer**.
-- Table & UI rendering: **ink**.
+- Prompts / forms: **[@inquirer/prompts](https://www.npmjs.com/package/@inquirer/prompts)**.
+- Table & UI rendering: **[ink](https://github.com/vadimdemedes/ink)**.
 - No dates, tags, or config file in MVP.
 - File naming: `<slug>.md` stored in `/tasks`.
 
@@ -29,7 +29,7 @@ A lightweight CLI for managing tasks as Markdown files with YAML front-matter.
 
 2. `mtd add` (interactive)
 
-   - enquirer prompt:
+   - @inquirer/prompts:
      - Title (required)
      - Description (optional; opens `$EDITOR` if chosen)
    - Generates slug (`kebab-case` of title).
@@ -52,7 +52,7 @@ A lightweight CLI for managing tasks as Markdown files with YAML front-matter.
 
 4. `mtd done` (interactive)
 
-   - Lists all tasks where `is_done == false` in an enquirer multi-select.
+   - Lists all tasks where `is_done == false` in a checkbox prompt.
    - On confirm, toggles `is_done: true` in chosen files.
    - Success message per task.
 
