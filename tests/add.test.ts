@@ -16,10 +16,30 @@ vi.mock("path", () => ({
   },
 }));
 
-vi.mock("@inquirer/prompts", () => ({
-  input: vi.fn(),
-  confirm: vi.fn(),
-}));
+vi.mock("@inquirer/prompts", () => {
+  // Create a properly typed mock function for input
+  const mockInput = vi.fn();
+  // Create a properly typed mock function for confirm
+  const mockConfirm = vi.fn();
+
+  // Add cancel method to the returned promises
+  mockInput.mockImplementation(() => {
+    const promise = Promise.resolve("");
+    (promise as Promise<string> & { cancel: () => void }).cancel = () => {};
+    return promise as Promise<string> & { cancel: () => void };
+  });
+
+  mockConfirm.mockImplementation(() => {
+    const promise = Promise.resolve(false);
+    (promise as Promise<boolean> & { cancel: () => void }).cancel = () => {};
+    return promise as Promise<boolean> & { cancel: () => void };
+  });
+
+  return {
+    input: mockInput,
+    confirm: mockConfirm,
+  };
+});
 
 describe("Add Command", () => {
   const mockCwd = "/mock/current/dir";
@@ -196,13 +216,17 @@ describe("Add Command", () => {
       vi.mocked(fs.existsSync).mockReturnValueOnce(true); // tasks directory exists
 
       // Setup the mock to test the validate function
-      vi.mocked(input).mockImplementationOnce(async (options) => {
-        // First call the validate function with empty string
-        const validateResult = options.validate("");
-        expect(validateResult).toBe("Title cannot be empty");
+      vi.mocked(input).mockImplementationOnce((options) => {
+        if (options && typeof options.validate === "function") {
+          // First call the validate function with empty string
+          const validateResult = options.validate("");
+          expect(validateResult).toBe("Title cannot be empty");
+        }
 
-        // Then return a valid title
-        return "Valid Title";
+        // Return a promise with the cancel method
+        const promise = Promise.resolve("Valid Title");
+        (promise as Promise<string> & { cancel: () => void }).cancel = () => {};
+        return promise as Promise<string> & { cancel: () => void };
       });
 
       vi.mocked(input).mockResolvedValueOnce("Description"); // Description prompt
