@@ -3,6 +3,7 @@ import { initCommand } from "./commands/init.js";
 import { addCommand } from "./commands/add.js";
 import { listCommand } from "./commands/list.js";
 import { doneCommand } from "./commands/done.js";
+import { deleteCommand } from "./commands/delete.js";
 
 const program = new Command();
 
@@ -38,5 +39,10 @@ program
 program.command("list").description("List all tasks").action(listCommand);
 
 program.command("done").description("Mark tasks as done").action(doneCommand);
+
+program
+  .command("delete")
+  .description("Delete tasks by moving them to archive")
+  .action(deleteCommand);
 
 program.parse();
