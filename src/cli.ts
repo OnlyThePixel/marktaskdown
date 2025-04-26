@@ -32,9 +32,14 @@ program
 program
   .command("add")
   .description("Add a new task")
-  .argument("<title>", "Title of the task")
+  .argument(
+    "[title]",
+    "Title of the task (optional, will prompt if not provided)"
+  )
   .option("-d, --description <description>", "Description of the task")
-  .action((title, options) => addCommand(title, options));
+  .action(async (title, options) => {
+    await addCommand(title, options);
+  });
 
 program.command("list").description("List all tasks").action(listCommand);
 
