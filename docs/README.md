@@ -127,13 +127,14 @@ Stretch
 
 ## 4. Misc. Engineering Guidelines
 
-- Code style: eslint-airbnb-base + prettier (auto-fix on commit via husky).
+- Code style: @typescript-eslint/recommended + prettier (auto-fix on commit via husky).
 - Tests: vitest + ts-node for E2E; >80 % coverage gate.
 - Branch naming: `feat/<slug>`, `fix/<slug>`, `chore/<slug>`.
-- Conventional Commits for versioning (`feat: add done command`).
+- [Gitmoji](https://gitmoji.dev/) commit format for versioning (e.g., `🎉 Initial project setup`).
 - CI (GitHub Actions): install → lint → test → build.
 - Avoid over-abstraction; one file per command until complexity warrants split.
 - Keep external deps minimal; revisit after MVP.
+- Use Domain-Driven Design (DDD) approach for code organization.
 
 ---
 
@@ -142,7 +143,7 @@ Stretch
 1. Should `add` open `$EDITOR` for multi-line description or keep inline?
 2. Strategy for slug collisions in large repos (hash vs. numeric suffix).
 3. How to display archived tasks (`mtd list --archived` future flag).
-4. License: MIT vs. Apache-2—choose before first public release.
+4. ~~License: MIT vs. Apache-2~~ → MIT license chosen.
 
 ---
 
