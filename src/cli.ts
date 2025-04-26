@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { initCommand } from "./commands/init.js";
 import { addCommand } from "./commands/add.js";
+import { listCommand } from "./commands/list.js";
 
 const program = new Command();
 
@@ -32,5 +33,7 @@ program
   .argument("<title>", "Title of the task")
   .option("-d, --description <description>", "Description of the task")
   .action((title, options) => addCommand(title, options));
+
+program.command("list").description("List all tasks").action(listCommand);
 
 program.parse();
