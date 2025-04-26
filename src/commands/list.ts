@@ -65,7 +65,7 @@ export function listCommand(): void {
           title: frontMatter.title,
           status: frontMatter.is_done ? "DONE" : "PENDING",
         };
-      } catch (error) {
+      } catch {
         console.warn(`⚠️ Warning: Could not parse task file: ${filename}`);
 
         return null;

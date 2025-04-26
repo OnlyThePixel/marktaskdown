@@ -12,24 +12,26 @@ type Column = {
   width: number;
 };
 
+type Styles = {
+  color?: string;
+  backgroundColor?: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  inverse?: boolean;
+  strikethrough?: boolean;
+  dimColor?: boolean;
+};
+
 type TableProps = {
   data: ScalarDict[];
   showHeaders?: boolean;
-  headerStyles?: {
-    color?: string;
-    backgroundColor?: string;
-    bold?: boolean;
-    italic?: boolean;
-    underline?: boolean;
-    inverse?: boolean;
-    strikethrough?: boolean;
-    dimColor?: boolean;
-  };
+  headerStyles?: Styles;
 };
 
 // Helper function to generate headers from data
 function generateHeaders(data: ScalarDict[]): ScalarDict {
-  let headers: ScalarDict = {};
+  const headers: ScalarDict = {};
 
   data.forEach((row) => {
     Object.keys(row).forEach((key) => {
@@ -76,7 +78,7 @@ export const Table = ({
 
 // Helper function to determine columns and their widths
 function getColumns(data: ScalarDict[]): Column[] {
-  let columnWidths: { [key: string]: number } = {};
+  const columnWidths: { [key: string]: number } = {};
 
   data.forEach((row) => {
     Object.keys(row).forEach((key) => {
@@ -95,7 +97,7 @@ function getColumns(data: ScalarDict[]): Column[] {
 }
 
 // Helper function to render a row with separators
-function renderRow(row: ScalarDict, columns: Column[], textStyles?: any) {
+function renderRow(row: ScalarDict, columns: Column[], textStyles?: Styles) {
   return (
     <Box flexDirection="row">
       <Text>│</Text>

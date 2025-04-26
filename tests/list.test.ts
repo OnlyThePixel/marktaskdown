@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "fs";
-import path from "path";
 import { listCommand } from "../src/commands/list.js";
 
 vi.mock("fs", () => ({
@@ -115,7 +114,7 @@ describe("List Command", () => {
     ] as unknown as fs.Dirent[]);
 
     // Mock statSync to return an object with isFile method
-    vi.mocked(fs.statSync).mockImplementation((path) => {
+    vi.mocked(fs.statSync).mockImplementation(() => {
       return {
         isFile: () => true,
       } as fs.Stats;
