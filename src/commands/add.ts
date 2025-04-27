@@ -16,9 +16,13 @@ function toSlug(str: string): string {
  * Create task content with YAML front-matter
  */
 function createTaskContent(title: string, description?: string): string {
-  const frontMatter = ["---", `title: ${title}`, "is_done: false", "---"].join(
-    "\n"
-  );
+  // Quote the title to handle special characters like colons in YAML
+  const frontMatter = [
+    "---",
+    `title: "${title}"`,
+    "is_done: false",
+    "---",
+  ].join("\n");
 
   const descriptionContent =
     description || "<!-- Add your task details here -->";

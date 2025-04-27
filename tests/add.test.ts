@@ -93,7 +93,7 @@ describe("Add Command", () => {
 
     const expectedContent = [
       "---",
-      "title: Test Task",
+      'title: "Test Task"',
       "is_done: false",
       "---",
       "",
@@ -122,7 +122,7 @@ describe("Add Command", () => {
 
     const expectedContent = [
       "---",
-      "title: Complex Task",
+      'title: "Complex Task"',
       "is_done: false",
       "---",
       "",
@@ -169,7 +169,7 @@ describe("Add Command", () => {
 
       const expectedContent = [
         "---",
-        "title: Interactive Task",
+        'title: "Interactive Task"',
         "is_done: false",
         "---",
         "",
@@ -198,7 +198,7 @@ describe("Add Command", () => {
 
       const expectedContent = [
         "---",
-        "title: Task Without Description",
+        'title: "Task Without Description"',
         "is_done: false",
         "---",
         "",
@@ -261,7 +261,7 @@ describe("Add Command", () => {
 
       const expectedContent = [
         "---",
-        "title: New Task",
+        'title: "New Task"',
         "is_done: false",
         "---",
         "",
