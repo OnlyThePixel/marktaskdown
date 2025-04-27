@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { Task } from "./Task.js";
+import { Slug } from "../valueObjects/Slug.js";
 
 describe("Task Entity", () => {
   // Test data
-  const validSlug = "task-1";
+  const validSlug = new Slug("task-1");
   const validTitle = "Test Task";
   const validDescription = "This is a test task";
 
@@ -35,10 +36,12 @@ describe("Task Entity", () => {
       expect(task.description).toBe("");
     });
 
-    it("should throw error if slug is empty", () => {
+    it("should throw error if slug is invalid", () => {
       // Arrange & Act & Assert
-      expect(() => new Task("", validTitle, validDescription)).toThrow(
-        "Slug cannot be empty"
+      expect(
+        () => new Task(new Slug("invalid@slug"), validTitle, validDescription)
+      ).toThrow(
+        "Slug can only contain lowercase letters, numbers, and hyphens"
       );
     });
 
@@ -104,7 +107,7 @@ describe("Task Entity", () => {
       // Act & Assert
       expect(() => {
         // @ts-expect-error Testing runtime behavior
-        task.slug = "new-slug";
+        task.slug = new Slug("new-slug");
       }).toThrow();
     });
 

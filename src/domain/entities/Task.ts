@@ -2,8 +2,10 @@
  * Task entity representing a task in the system
  * Core domain entity with properties and behavior
  */
+import { Slug } from "../valueObjects/Slug.js";
+
 export class Task {
-  readonly #slug: string;
+  readonly #slug: Slug;
   readonly #title: string;
   readonly #description: string;
   #isDone: boolean;
@@ -17,16 +19,12 @@ export class Task {
    * @param isDone - Whether the task is done (default: false)
    */
   constructor(
-    slug: string,
+    slug: Slug,
     title: string,
     description: string,
     isDone: boolean = false
   ) {
     // Validate required fields
-    if (!slug) {
-      throw new Error("Slug cannot be empty");
-    }
-
     if (!title) {
       throw new Error("Title cannot be empty");
     }
@@ -40,7 +38,7 @@ export class Task {
   /**
    * Get the slug of the task
    */
-  get slug(): string {
+  get slug(): Slug {
     return this.#slug;
   }
 
