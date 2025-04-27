@@ -1,5 +1,5 @@
 ---
-title: 'Task 1.1: Implement Task Entity'
+title: "Task 1.1: Implement Task Entity"
 is_done: true
 ---
 
