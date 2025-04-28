@@ -3,36 +3,54 @@
  * Core domain entity with properties and behavior
  */
 import { Slug } from "../valueObjects/Slug.js";
+import { Title } from "../valueObjects/Title.js";
 
 export class Task {
   readonly #slug: Slug;
-  readonly #title: string;
+  readonly #title: Title;
   readonly #description: string;
   #isDone: boolean;
 
   /**
    * Creates a new Task instance
    *
-   * @param slug - Unique identifier for the task
    * @param title - Title of the task
    * @param description - Description of the task
    * @param isDone - Whether the task is done (default: false)
+   * @param id - Optional ID to use for slug generation (default: random string)
    */
   constructor(
-    slug: Slug,
-    title: string,
+    title: Title,
     description: string,
-    isDone: boolean = false
+    isDone: boolean = false,
+    id?: string
   ) {
-    // Validate required fields
-    if (!title) {
-      throw new Error("Title cannot be empty");
-    }
-
-    this.#slug = slug;
     this.#title = title;
     this.#description = description;
     this.#isDone = isDone;
+    this.#slug = this.#generateSlug(id);
+  }
+
+  /**
+   * Generates a slug from the title
+   *
+   * @param id - Optional ID to use for slug generation (default: random string)
+   * @returns A slug generated from the title
+   * @private
+   */
+  #generateSlug(id?: string): Slug {
+    const taskId = id || this.#generateRandomId();
+    return Slug.fromIdAndTitle(taskId, this.#title.value);
+  }
+
+  /**
+   * Generates a random ID for the task
+   *
+   * @returns A random string ID
+   * @private
+   */
+  #generateRandomId(): string {
+    return Math.floor(Math.random() * 10000).toString();
   }
 
   /**
@@ -45,7 +63,7 @@ export class Task {
   /**
    * Get the title of the task
    */
-  get title(): string {
+  get title(): Title {
     return this.#title;
   }
 

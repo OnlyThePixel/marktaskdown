@@ -1,20 +1,20 @@
 import { describe, it, expect } from "vitest";
 import { Task } from "./Task.js";
 import { Slug } from "../valueObjects/Slug.js";
+import { Title } from "../valueObjects/Title.js";
 
 describe("Task Entity", () => {
   // Test data
-  const validSlug = new Slug("task-1");
-  const validTitle = "Test Task";
+  const validTitle = new Title("Test Task");
   const validDescription = "This is a test task";
 
   describe("Creation", () => {
     it("should create a task with all properties", () => {
       // Arrange & Act
-      const task = new Task(validSlug, validTitle, validDescription, false);
+      const task = new Task(validTitle, validDescription, false, "1");
 
       // Assert
-      expect(task.slug).toBe(validSlug);
+      expect(task.slug.value).toBe("1-test-task");
       expect(task.title).toBe(validTitle);
       expect(task.description).toBe(validDescription);
       expect(task.isDone).toBe(false);
@@ -22,7 +22,7 @@ describe("Task Entity", () => {
 
     it("should create a task with default isDone as false", () => {
       // Arrange & Act
-      const task = new Task(validSlug, validTitle, validDescription);
+      const task = new Task(validTitle, validDescription, undefined, "1");
 
       // Assert
       expect(task.isDone).toBe(false);
@@ -30,24 +30,31 @@ describe("Task Entity", () => {
 
     it("should create a task with empty description", () => {
       // Arrange & Act
-      const task = new Task(validSlug, validTitle, "");
+      const task = new Task(validTitle, "", undefined, "1");
 
       // Assert
       expect(task.description).toBe("");
     });
 
-    it("should throw error if slug is invalid", () => {
-      // Arrange & Act & Assert
-      expect(
-        () => new Task(new Slug("invalid@slug"), validTitle, validDescription)
-      ).toThrow(
-        "Slug can only contain lowercase letters, numbers, and hyphens"
-      );
+    it("should generate a slug from the title", () => {
+      // Arrange & Act
+      const task = new Task(validTitle, validDescription, false, "1");
+
+      // Assert
+      expect(task.slug.value).toBe("1-test-task");
     });
 
-    it("should throw error if title is empty", () => {
+    it("should generate a random ID for the slug if none is provided", () => {
+      // Arrange & Act
+      const task = new Task(validTitle, validDescription);
+
+      // Assert
+      expect(task.slug.value).toMatch(/^\d+-test-task$/);
+    });
+
+    it("should throw error if title is invalid", () => {
       // Arrange & Act & Assert
-      expect(() => new Task(validSlug, "", validDescription)).toThrow(
+      expect(() => new Task(new Title(""), validDescription)).toThrow(
         "Title cannot be empty"
       );
     });
@@ -56,7 +63,7 @@ describe("Task Entity", () => {
   describe("Behavior", () => {
     it("should set task as done", () => {
       // Arrange
-      const task = new Task(validSlug, validTitle, validDescription, false);
+      const task = new Task(validTitle, validDescription, false, "1");
 
       // Act
       task.setAsDone();
@@ -67,7 +74,7 @@ describe("Task Entity", () => {
 
     it("should set task as undone", () => {
       // Arrange
-      const task = new Task(validSlug, validTitle, validDescription, true);
+      const task = new Task(validTitle, validDescription, true, "1");
 
       // Act
       task.setAsUndone();
@@ -78,7 +85,7 @@ describe("Task Entity", () => {
 
     it("should not change state when setting done task as done", () => {
       // Arrange
-      const task = new Task(validSlug, validTitle, validDescription, true);
+      const task = new Task(validTitle, validDescription, true, "1");
 
       // Act
       task.setAsDone();
@@ -89,7 +96,7 @@ describe("Task Entity", () => {
 
     it("should not change state when setting undone task as undone", () => {
       // Arrange
-      const task = new Task(validSlug, validTitle, validDescription, false);
+      const task = new Task(validTitle, validDescription, false, "1");
 
       // Act
       task.setAsUndone();
@@ -102,7 +109,7 @@ describe("Task Entity", () => {
   describe("Properties", () => {
     it("should not allow modifying slug after creation", () => {
       // Arrange
-      const task = new Task(validSlug, validTitle, validDescription);
+      const task = new Task(validTitle, validDescription, false, "1");
 
       // Act & Assert
       expect(() => {
@@ -113,18 +120,18 @@ describe("Task Entity", () => {
 
     it("should not allow modifying title after creation", () => {
       // Arrange
-      const task = new Task(validSlug, validTitle, validDescription);
+      const task = new Task(validTitle, validDescription, false, "1");
 
       // Act & Assert
       expect(() => {
         // @ts-expect-error Testing runtime behavior
-        task.title = "New Title";
+        task.title = new Title("New Title");
       }).toThrow();
     });
 
     it("should not allow modifying description after creation", () => {
       // Arrange
-      const task = new Task(validSlug, validTitle, validDescription);
+      const task = new Task(validTitle, validDescription, false, "1");
 
       // Act & Assert
       expect(() => {
@@ -135,7 +142,7 @@ describe("Task Entity", () => {
 
     it("should not allow modifying isDone directly", () => {
       // Arrange
-      const task = new Task(validSlug, validTitle, validDescription);
+      const task = new Task(validTitle, validDescription, false, "1");
 
       // Act & Assert
       expect(() => {
