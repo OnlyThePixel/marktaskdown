@@ -103,10 +103,24 @@ export async function doneCommand(): Promise<void> {
       frontMatter.is_done = true;
 
       // Write updated content back to file
-      const updatedContent = matter.stringify(
-        parsedContent.content,
-        frontMatter
+      let updatedContent = matter.stringify(parsedContent.content, frontMatter);
+
+      // Ensure quoted string values in front matter are properly quoted with double quotes
+      updatedContent = updatedContent.replace(
+        /^---\n([\s\S]*?)---/m,
+        (frontMatterBlock) => {
+          let processedBlock = frontMatterBlock;
+
+          // Replace any single-quoted values with double-quoted values
+          processedBlock = processedBlock.replace(
+            /: '((?:[^']|\\')+)'/g,
+            ': "$1"'
+          );
+
+          return processedBlock;
+        }
       );
+
       fs.writeFileSync(filePath, updatedContent);
 
       console.log(`✅ Marked task as done: ${frontMatter.title}`);

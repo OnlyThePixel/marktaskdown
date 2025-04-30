@@ -135,6 +135,47 @@ describe("Done Command", () => {
     expect(console.log).toHaveBeenCalledWith("✅ Marked task as done: Task 1");
   });
 
+  it("should serialize front matter with double quotes", async () => {
+    // This test verifies that the done command uses double quotes for string values in front matter
+
+    // Reset all mocks to ensure a clean state
+    vi.resetAllMocks();
+
+    // Re-mock process.cwd after reset
+    process.cwd = vi.fn().mockReturnValue(mockCwd);
+
+    // Setup mocks
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readdirSync).mockReturnValue([
+      "task-1.md",
+    ] as unknown as fs.Dirent[]);
+
+    // Mock statSync to return an object with isFile method
+    vi.mocked(fs.statSync).mockImplementation(
+      () =>
+        ({
+          isFile: () => true,
+        }) as fs.Stats
+    );
+
+    // Mock readFileSync for both calls
+    const mockContent =
+      '---\ntitle: "Task: 1"\nis_done: false\n---\n\nTask 1 description';
+    vi.mocked(fs.readFileSync).mockImplementation(() => mockContent);
+
+    // Mock checkbox to return the task
+    vi.mocked(checkbox).mockResolvedValue(["task-1.md"]);
+
+    // Execute the command
+    await doneCommand();
+
+    // Verify that writeFileSync was called with content containing double-quoted title
+    expect(fs.writeFileSync).toHaveBeenCalled();
+    const writeCall = vi.mocked(fs.writeFileSync).mock.calls[0];
+    expect(writeCall[0]).toBe(`${tasksDir}/task-1.md`);
+    expect(writeCall[1]).toMatch(/title: "Task: 1"/);
+  });
+
   it("should handle invalid files", async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readdirSync).mockReturnValue([
