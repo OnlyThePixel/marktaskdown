@@ -1,20 +1,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import fs from "fs";
 import path from "path";
 import { Task } from "../../domain/entities/Task.js";
 import { Title } from "../../domain/valueObjects/Title.js";
 import { Description } from "../../domain/valueObjects/Description.js";
 import { Slug } from "../../domain/valueObjects/Slug.js";
 import { FileSystemTaskRepository } from "./FileSystemTaskRepository.js";
-import matter from "gray-matter";
+import { MarkdownFileAdapter } from "../adapters/MarkdownFileAdapter.js";
 
-// Mock fs and path modules
-vi.mock("fs");
+// Mock path module and MarkdownFileAdapter
 vi.mock("path");
-vi.mock("gray-matter");
+vi.mock("../adapters/MarkdownFileAdapter.js");
 
 describe("FileSystemTaskRepository", () => {
   let repository: FileSystemTaskRepository;
+  let mockAdapter: MarkdownFileAdapter;
   let task1: Task;
   let task2: Task;
   let slug1: Slug;
@@ -28,8 +27,16 @@ describe("FileSystemTaskRepository", () => {
     // Mock path.join to return predictable paths
     vi.mocked(path.join).mockImplementation((...paths) => paths.join("/"));
 
-    // Create a new repository instance for each test
-    repository = new FileSystemTaskRepository(testTasksDir);
+    // Create a mock MarkdownFileAdapter
+    mockAdapter = {
+      readFile: vi.fn(),
+      writeFile: vi.fn(),
+      deleteFile: vi.fn(),
+      listFiles: vi.fn(),
+    } as unknown as MarkdownFileAdapter;
+
+    // Create a new repository instance with the mock adapter
+    repository = new FileSystemTaskRepository(testTasksDir, mockAdapter);
 
     // Create test tasks
     task1 = new Task(
@@ -48,14 +55,6 @@ describe("FileSystemTaskRepository", () => {
 
     slug1 = task1.slug;
     slug2 = task2.slug;
-
-    // Mock fs.existsSync to return true for the tasks directory
-    vi.mocked(fs.existsSync).mockImplementation((path) => {
-      if (path === testTasksDir) {
-        return true;
-      }
-      return false;
-    });
   });
 
   afterEach(() => {
@@ -63,38 +62,33 @@ describe("FileSystemTaskRepository", () => {
   });
 
   describe("save", () => {
-    it("should create the tasks directory if it doesn't exist", async () => {
-      // Mock fs.existsSync to return false for the tasks directory
-      vi.mocked(fs.existsSync).mockReturnValueOnce(false);
-
-      // Act
-      await repository.save(task1);
-
-      // Assert
-      expect(fs.mkdirSync).toHaveBeenCalledWith(testTasksDir, {
-        recursive: true,
-      });
-    });
-
-    it("should save a task to a file", async () => {
-      vi.mocked(matter.stringify).mockReturnValueOnce("");
+    it("should save a task using the adapter", async () => {
+      // Mock the writeFile method
+      vi.mocked(mockAdapter.writeFile).mockResolvedValueOnce();
 
       // Act
       await repository.save(task1);
 
       // Assert
       const expectedFilePath = `${testTasksDir}/${slug1.value}.md`;
-      expect(fs.writeFileSync).toHaveBeenCalledWith(
+      const expectedContent = task1.description.value;
+      const expectedFrontMatter = {
+        title: task1.title.value,
+        is_done: task1.isDone,
+      };
+
+      expect(mockAdapter.writeFile).toHaveBeenCalledWith(
         expectedFilePath,
-        expect.any(String)
+        expectedContent,
+        expectedFrontMatter
       );
     });
   });
 
   describe("findBySlug", () => {
     it("should return null if the task file doesn't exist", async () => {
-      // Mock fs.existsSync to return false for the task file
-      vi.mocked(fs.existsSync).mockReturnValueOnce(false);
+      // Mock readFile to return null (file doesn't exist)
+      vi.mocked(mockAdapter.readFile).mockResolvedValueOnce(null);
 
       // Act
       const result = await repository.findBySlug(slug1);
@@ -104,25 +98,13 @@ describe("FileSystemTaskRepository", () => {
     });
 
     it("should return a task if the file exists", async () => {
-      // Mock fs.existsSync to return true for the task file
-      vi.mocked(fs.existsSync).mockReturnValueOnce(true);
-
-      // Mock fs.readFileSync to return a task file content
-      vi.mocked(fs.readFileSync).mockReturnValueOnce(
-        Buffer.from("file content")
-      );
-
-      // Mock gray-matter to return task data
-      vi.mocked(matter).mockReturnValueOnce({
-        data: {
+      // Mock readFile to return file content
+      vi.mocked(mockAdapter.readFile).mockResolvedValueOnce({
+        frontMatter: {
           title: "Test Task 1",
           is_done: false,
         },
         content: "Description for task 1",
-        orig: "original content",
-        language: "yaml",
-        matter: "---\ntitle: Test Task 1\nis_done: false\n---",
-        stringify: () => "stringified content",
       });
 
       // Act
@@ -137,13 +119,10 @@ describe("FileSystemTaskRepository", () => {
     });
 
     it("should return null if there's an error reading the file", async () => {
-      // Mock fs.existsSync to return true for the task file
-      vi.mocked(fs.existsSync).mockReturnValueOnce(true);
-
-      // Mock fs.readFileSync to throw an error
-      vi.mocked(fs.readFileSync).mockImplementationOnce(() => {
-        throw new Error("Test error");
-      });
+      // Mock readFile to throw an error
+      vi.mocked(mockAdapter.readFile).mockRejectedValueOnce(
+        new Error("Test error")
+      );
 
       // Mock console.error to avoid polluting test output
       const consoleErrorSpy = vi
@@ -160,9 +139,9 @@ describe("FileSystemTaskRepository", () => {
   });
 
   describe("findAll", () => {
-    it("should return an empty array if the tasks directory doesn't exist", async () => {
-      // Mock fs.existsSync to return false for the tasks directory
-      vi.mocked(fs.existsSync).mockReturnValueOnce(false);
+    it("should return an empty array if no files are found", async () => {
+      // Mock listFiles to return an empty array
+      vi.mocked(mockAdapter.listFiles).mockResolvedValueOnce([]);
 
       // Act
       const result = await repository.findAll();
@@ -172,76 +151,42 @@ describe("FileSystemTaskRepository", () => {
     });
 
     it("should return all tasks from the directory", async () => {
-      // Mock fs.readdirSync to return a list of task files
-      const mockDirEntries = [
-        {
-          name: `${slug1.value}.md`,
-          isFile: () => true,
-          parentPath: testTasksDir,
-        },
-        {
-          name: `${slug2.value}.md`,
-          isFile: () => true,
-          parentPath: testTasksDir,
-        },
-        {
-          name: "not-a-markdown-file.txt",
-          isFile: () => true,
-          parentPath: testTasksDir,
-        },
-        { name: "subdirectory", isFile: () => false, parentPath: testTasksDir },
-      ];
-      vi.mocked(fs.readdirSync).mockReturnValueOnce(
-        mockDirEntries as unknown as fs.Dirent[]
-      );
+      // Mock listFiles to return file paths
+      const file1Path = `${testTasksDir}/${slug1.value}.md`;
+      const file2Path = `${testTasksDir}/${slug2.value}.md`;
+      vi.mocked(mockAdapter.listFiles).mockResolvedValueOnce([
+        file1Path,
+        file2Path,
+      ]);
 
-      // Mock fs.readFileSync to return task file contents
-      vi.mocked(fs.readFileSync).mockImplementation((filePath) => {
-        if (filePath === `${testTasksDir}/${slug1.value}.md`) {
-          return Buffer.from("Task 1 content");
-        }
-        if (filePath === `${testTasksDir}/${slug2.value}.md`) {
-          return Buffer.from("Task 2 content");
-        }
-        return Buffer.from("");
+      // Mock path.basename to return filenames
+      vi.mocked(path.basename).mockImplementation((filePath) => {
+        if (filePath === file1Path) return `${slug1.value}.md`;
+        if (filePath === file2Path) return `${slug2.value}.md`;
+        return "";
       });
 
-      // Mock gray-matter to return task data
-      vi.mocked(matter).mockImplementation((content) => {
-        if (content.toString().includes("Task 1")) {
+      // Mock readFile to return file contents
+      vi.mocked(mockAdapter.readFile).mockImplementation(async (filePath) => {
+        if (filePath === `${testTasksDir}/${slug1.value}.md`) {
           return {
-            data: {
+            frontMatter: {
               title: "Test Task 1",
               is_done: false,
             },
             content: "Description for task 1",
-            orig: "original content",
-            language: "yaml",
-            matter: "---\ntitle: Test Task 1\nis_done: false\n---",
-            stringify: () => "stringified content",
           };
-        } else if (content.toString().includes("Task 2")) {
+        }
+        if (filePath === `${testTasksDir}/${slug2.value}.md`) {
           return {
-            data: {
+            frontMatter: {
               title: "Test Task 2",
               is_done: true,
             },
             content: "Description for task 2",
-            orig: "original content",
-            language: "yaml",
-            matter: "---\ntitle: Test Task 2\nis_done: true\n---",
-            stringify: () => "stringified content",
           };
         }
-
-        return {
-          data: {},
-          content: "",
-          orig: "original content",
-          language: "yaml",
-          matter: "---\n---",
-          stringify: () => "stringified content",
-        };
+        return null;
       });
 
       // Act
@@ -256,51 +201,36 @@ describe("FileSystemTaskRepository", () => {
     });
 
     it("should skip files that cannot be parsed", async () => {
-      // Mock fs.readdirSync to return a list of task files
-      const mockDirEntries = [
-        {
-          name: `${slug1.value}.md`,
-          isFile: () => true,
-          parentPath: testTasksDir,
-        },
-        {
-          name: "invalid-file.md",
-          isFile: () => true,
-          parentPath: testTasksDir,
-        },
-      ];
-      vi.mocked(fs.readdirSync).mockReturnValueOnce(
-        mockDirEntries as unknown as fs.Dirent[]
-      );
+      // Mock listFiles to return file paths
+      const file1Path = `${testTasksDir}/${slug1.value}.md`;
+      const invalidFilePath = `${testTasksDir}/invalid-file.md`;
+      vi.mocked(mockAdapter.listFiles).mockResolvedValueOnce([
+        file1Path,
+        invalidFilePath,
+      ]);
 
-      // Mock fs.readFileSync to return task file contents
-      vi.mocked(fs.readFileSync).mockImplementation((filePath) => {
-        if (filePath === `${testTasksDir}/${slug1.value}.md`) {
-          return Buffer.from("Task 1 content");
-        }
-        if (filePath === `${testTasksDir}/invalid-file.md`) {
-          return Buffer.from("Invalid content");
-        }
-        return Buffer.from("");
+      // Mock path.basename to return filenames
+      vi.mocked(path.basename).mockImplementation((filePath) => {
+        if (filePath === file1Path) return `${slug1.value}.md`;
+        if (filePath === invalidFilePath) return "invalid-file.md";
+        return "";
       });
 
-      // Mock gray-matter to return task data for valid files and throw for invalid
-      vi.mocked(matter).mockImplementation((content) => {
-        if (content.toString().includes("Task 1")) {
+      // Mock readFile to return content for valid file and throw for invalid
+      vi.mocked(mockAdapter.readFile).mockImplementation(async (filePath) => {
+        if (filePath === `${testTasksDir}/${slug1.value}.md`) {
           return {
-            data: {
+            frontMatter: {
               title: "Test Task 1",
               is_done: false,
             },
             content: "Description for task 1",
-            orig: "original content",
-            language: "yaml",
-            matter: "---\ntitle: Test Task 1\nis_done: false\n---",
-            stringify: () => "stringified content",
           };
         }
-
-        throw new Error("Invalid content");
+        if (filePath === `${testTasksDir}/invalid-file.md`) {
+          throw new Error("Invalid content");
+        }
+        return null;
       });
 
       // Mock console.warn to avoid polluting test output
@@ -319,25 +249,16 @@ describe("FileSystemTaskRepository", () => {
   });
 
   describe("delete", () => {
-    it("should delete a task file if it exists", async () => {
-      // Mock fs.existsSync to return true for the task file
-      vi.mocked(fs.existsSync).mockReturnValueOnce(true);
+    it("should delete a task file using the adapter", async () => {
+      // Mock deleteFile method
+      vi.mocked(mockAdapter.deleteFile).mockResolvedValueOnce();
 
       // Act
       await repository.delete(slug1);
 
       // Assert
       const expectedFilePath = `${testTasksDir}/${slug1.value}.md`;
-      expect(fs.unlinkSync).toHaveBeenCalledWith(expectedFilePath);
-    });
-
-    it("should not throw an error if the task file doesn't exist", async () => {
-      // Mock fs.existsSync to return false for the task file
-      vi.mocked(fs.existsSync).mockReturnValueOnce(false);
-
-      // Act & Assert
-      await expect(repository.delete(slug1)).resolves.not.toThrow();
-      expect(fs.unlinkSync).not.toHaveBeenCalled();
+      expect(mockAdapter.deleteFile).toHaveBeenCalledWith(expectedFilePath);
     });
   });
 });
