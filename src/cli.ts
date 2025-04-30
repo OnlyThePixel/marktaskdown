@@ -27,7 +27,9 @@ program.action(() => {
 program
   .command("init")
   .description("Initialize a tasks directory in the current folder")
-  .action(initCommand);
+  .action(async () => {
+    await initCommand();
+  });
 
 program
   .command("add")

@@ -1,17 +1,17 @@
-import fs from "fs";
-import path from "path";
+import { InitializeProjectUseCase } from "../application/useCases/commands/InitializeProjectUseCase.js";
 
 /**
  * Initialize the tasks directory
  *
  * Creates a tasks directory in the current working directory
  */
-export function initCommand(): void {
-  const cwd = process.cwd();
-  const tasksDir = path.join(cwd, "tasks");
+export async function initCommand(): Promise<void> {
+  // Use the InitializeProjectUseCase to create the tasks directory
+  const initializeProjectUseCase = new InitializeProjectUseCase();
+  const result = await initializeProjectUseCase.execute();
 
-  if (!fs.existsSync(tasksDir)) {
-    fs.mkdirSync(tasksDir, { recursive: true });
+  // Log the result
+  if (result.created) {
     console.log("✅ Created tasks directory");
   } else {
     console.log("✅ Tasks directory already exists");

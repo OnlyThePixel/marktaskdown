@@ -1,19 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import fs from "fs";
 import { initCommand } from "../src/commands/init.js";
+import { InitializeProjectUseCase } from "../src/application/useCases/commands/InitializeProjectUseCase.js";
 
-vi.mock("fs", () => ({
-  default: {
-    existsSync: vi.fn(),
-    mkdirSync: vi.fn(),
-  },
-}));
-
-vi.mock("path", () => ({
-  default: {
-    join: vi.fn((...args) => args.join("/")),
-  },
-}));
+// Mock the InitializeProjectUseCase
+vi.mock("../src/application/useCases/commands/InitializeProjectUseCase.js");
 
 describe("Init Command", () => {
   const mockCwd = "/mock/current/dir";
@@ -30,21 +20,57 @@ describe("Init Command", () => {
     process.cwd = originalCwd;
   });
 
-  it("creates tasks directory if it does not exist", () => {
-    vi.mocked(fs.existsSync).mockReturnValue(false);
+  it("calls InitializeProjectUseCase and logs the result when directory is created", async () => {
+    // Arrange
+    const mockExecute = vi.fn().mockResolvedValue({
+      created: true,
+      tasksDir,
+    });
 
-    initCommand();
+    // Create a proper mock of the class
+    vi.mocked(InitializeProjectUseCase.prototype.execute).mockImplementation(
+      mockExecute
+    );
 
-    expect(fs.existsSync).toHaveBeenCalledWith(tasksDir);
-    expect(fs.mkdirSync).toHaveBeenCalledWith(tasksDir, { recursive: true });
+    const consoleSpy = vi.spyOn(console, "log");
+
+    // Act
+    await initCommand();
+
+    // Assert
+    expect(InitializeProjectUseCase).toHaveBeenCalledWith();
+    expect(mockExecute).toHaveBeenCalledTimes(1);
+    expect(consoleSpy).toHaveBeenCalledWith("✅ Created tasks directory");
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '🚀 Initialization complete! You can now add tasks with "mtd add"'
+    );
   });
 
-  it("does not create tasks directory if it already exists", () => {
-    vi.mocked(fs.existsSync).mockReturnValue(true);
+  it("calls InitializeProjectUseCase and logs the result when directory already exists", async () => {
+    // Arrange
+    const mockExecute = vi.fn().mockResolvedValue({
+      created: false,
+      tasksDir,
+    });
 
-    initCommand();
+    // Create a proper mock of the class
+    vi.mocked(InitializeProjectUseCase.prototype.execute).mockImplementation(
+      mockExecute
+    );
 
-    expect(fs.existsSync).toHaveBeenCalledWith(tasksDir);
-    expect(fs.mkdirSync).not.toHaveBeenCalled();
+    const consoleSpy = vi.spyOn(console, "log");
+
+    // Act
+    await initCommand();
+
+    // Assert
+    expect(InitializeProjectUseCase).toHaveBeenCalledWith();
+    expect(mockExecute).toHaveBeenCalledTimes(1);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "✅ Tasks directory already exists"
+    );
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '🚀 Initialization complete! You can now add tasks with "mtd add"'
+    );
   });
 });
