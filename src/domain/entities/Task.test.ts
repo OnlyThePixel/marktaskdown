@@ -2,11 +2,12 @@ import { describe, it, expect } from "vitest";
 import { Task } from "./Task.js";
 import { Slug } from "../valueObjects/Slug.js";
 import { Title } from "../valueObjects/Title.js";
+import { Description } from "../valueObjects/Description.js";
 
 describe("Task Entity", () => {
   // Test data
   const validTitle = new Title("Test Task");
-  const validDescription = "This is a test task";
+  const validDescription = new Description("This is a test task");
 
   describe("Creation", () => {
     it("should create a task with all properties", () => {
@@ -30,10 +31,10 @@ describe("Task Entity", () => {
 
     it("should create a task with empty description", () => {
       // Arrange & Act
-      const task = new Task(validTitle, "", undefined, "1");
+      const task = new Task(validTitle, new Description(""), undefined, "1");
 
       // Assert
-      expect(task.description).toBe("");
+      expect(task.description.value).toBe("");
     });
 
     it("should generate a slug from the title", () => {
@@ -136,7 +137,7 @@ describe("Task Entity", () => {
       // Act & Assert
       expect(() => {
         // @ts-expect-error Testing runtime behavior
-        task.description = "New description";
+        task.description = new Description("New description");
       }).toThrow();
     });
 

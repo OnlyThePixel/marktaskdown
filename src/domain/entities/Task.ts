@@ -4,11 +4,12 @@
  */
 import { Slug } from "../valueObjects/Slug.js";
 import { Title } from "../valueObjects/Title.js";
+import { Description } from "../valueObjects/Description.js";
 
 export class Task {
   readonly #slug: Slug;
   readonly #title: Title;
-  readonly #description: string;
+  readonly #description: Description;
   #isDone: boolean;
 
   /**
@@ -21,7 +22,7 @@ export class Task {
    */
   constructor(
     title: Title,
-    description: string,
+    description: Description,
     isDone: boolean = false,
     id?: string
   ) {
@@ -70,7 +71,7 @@ export class Task {
   /**
    * Get the description of the task
    */
-  get description(): string {
+  get description(): Description {
     return this.#description;
   }
 
