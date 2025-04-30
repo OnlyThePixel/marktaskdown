@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import { ProjectRepository } from "../../../domain/repositories/ProjectRepository.js";
+import { FileSystemProjectRepository } from "../../../infrastructure/repositories/FileSystemProjectRepository.js";
 import { InitializeProjectResultDTO } from "../../dtos/InitializeProjectResultDTO.js";
 
 /**
@@ -7,15 +7,16 @@ import { InitializeProjectResultDTO } from "../../dtos/InitializeProjectResultDT
  * Creates the tasks directory if it doesn't exist
  */
 export class InitializeProjectUseCase {
-  private readonly tasksDir: string;
+  private readonly projectRepository: ProjectRepository;
 
   /**
    * Creates a new InitializeProjectUseCase
    *
-   * @param tasksDir - Optional custom path for the tasks directory
+   * @param projectRepository - Repository for project operations
    */
-  constructor(tasksDir?: string) {
-    this.tasksDir = tasksDir || path.join(process.cwd(), "tasks");
+  constructor(projectRepository?: ProjectRepository) {
+    this.projectRepository =
+      projectRepository || new FileSystemProjectRepository();
   }
 
   /**
@@ -24,15 +25,11 @@ export class InitializeProjectUseCase {
    * @returns Result of the initialization
    */
   async execute(): Promise<InitializeProjectResultDTO> {
-    const created = !fs.existsSync(this.tasksDir);
-
-    if (created) {
-      fs.mkdirSync(this.tasksDir, { recursive: true });
-    }
+    const created = await this.projectRepository.initializeTasksDirectory();
 
     return {
       created,
-      tasksDir: this.tasksDir,
+      tasksDir: this.projectRepository.getTasksDirectoryPath(),
     };
   }
 }
