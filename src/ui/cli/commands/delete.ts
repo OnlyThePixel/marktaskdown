@@ -1,23 +1,15 @@
 import fs from "fs";
 import path from "path";
-import matter from "gray-matter";
 import { checkbox, confirm } from "@inquirer/prompts";
-
-interface TaskFrontMatter {
-  title: string;
-  is_done: boolean;
-}
-
-interface TaskChoice {
-  name: string;
-  value: string;
-  message: string;
-}
+import { DeleteTaskUseCase } from "../../../application/useCases/commands/DeleteTaskUseCase.js";
+import { FileSystemTaskRepository } from "../../../infrastructure/repositories/FileSystemTaskRepository.js";
+import { Slug } from "../../../domain/valueObjects/Slug.js";
 
 /**
  * Delete tasks by moving them to archive
  *
  * Lists all tasks and allows selecting which ones to move to the archive directory
+ * Uses DeleteTaskUseCase to delete tasks from the repository
  */
 export async function deleteCommand(): Promise<void> {
   const cwd = process.cwd();
@@ -35,68 +27,44 @@ export async function deleteCommand(): Promise<void> {
     fs.mkdirSync(archiveDir, { recursive: true });
   }
 
-  const tasksFiles = fs.readdirSync(tasksDir);
+  // Create repository and use case
+  const taskRepository = new FileSystemTaskRepository(tasksDir);
+  const deleteTaskUseCase = new DeleteTaskUseCase(taskRepository);
 
-  // Filter for markdown files
-  const markdownFiles = tasksFiles.filter((filename) => {
-    const filePath = path.join(tasksDir, filename);
-    return fs.statSync(filePath).isFile() && filePath.endsWith(".md");
+  // Get all tasks
+  const tasks = await taskRepository.findAll();
+
+  if (tasks.length === 0) {
+    console.log("📝 No tasks found.");
+    return;
+  }
+
+  // Prepare choices for the checkbox prompt
+  const choices = tasks.map((task) => {
+    return {
+      name: `${task.title.value} ${task.isDone ? "(DONE)" : "(PENDING)"}`,
+      value: task.slug.value,
+      message: `${task.title.value} ${task.isDone ? "(DONE)" : "(PENDING)"}`,
+    };
   });
 
-  if (markdownFiles.length === 0) {
-    console.log("📝 No tasks found.");
-    return;
-  }
-
-  // Parse task files
-  const allTasks: TaskChoice[] = [];
-
-  for (const filename of markdownFiles) {
-    const filePath = path.join(tasksDir, filename);
-
-    try {
-      const fileContent = fs.readFileSync(filePath, "utf8");
-      const { data } = matter(fileContent);
-      const frontMatter = data as TaskFrontMatter;
-
-      if (!frontMatter.title) {
-        console.warn(`⚠️ Warning: Could not parse task file: ${filename}`);
-        continue;
-      }
-
-      // Include all tasks regardless of status
-      allTasks.push({
-        name: filename,
-        value: filename,
-        message: `${frontMatter.title} ${frontMatter.is_done ? "(DONE)" : "(PENDING)"}`,
-      });
-    } catch {
-      console.warn(`⚠️ Warning: Could not parse task file: ${filename}`);
-    }
-  }
-
-  if (allTasks.length === 0) {
-    console.log("📝 No tasks found.");
-    return;
-  }
-
   // Prompt user to select tasks to delete
-  const selectedTasks = await checkbox({
+  const selectedSlugs = await checkbox({
     message: "Select tasks to delete",
-    choices: allTasks.map((task) => ({
-      name: task.message,
-      value: task.value,
+    choices: choices.map((choice) => ({
+      name: choice.message,
+      value: choice.value,
     })),
   });
 
-  if (!selectedTasks || selectedTasks.length === 0) {
+  if (!selectedSlugs || selectedSlugs.length === 0) {
     console.log("❌ No tasks selected.");
     return;
   }
 
   // Confirm deletion
   const confirmed = await confirm({
-    message: `Are you sure you want to delete ${selectedTasks.length} task(s)?`,
+    message: `Are you sure you want to delete ${selectedSlugs.length} task(s)?`,
     default: false,
   });
 
@@ -105,26 +73,49 @@ export async function deleteCommand(): Promise<void> {
     return;
   }
 
-  // Move selected tasks to archive
-  for (const filename of selectedTasks) {
-    const sourcePath = path.join(tasksDir, filename);
-    const destinationPath = path.join(archiveDir, filename);
-
+  // Process selected tasks
+  for (const slugValue of selectedSlugs) {
     try {
-      // Read the file content
-      const fileContent = fs.readFileSync(sourcePath, "utf8");
-      const parsedContent = matter(fileContent);
-      const frontMatter = parsedContent.data as TaskFrontMatter;
+      // Create slug value object
+      const slug = new Slug(slugValue);
 
-      // Write the file to the archive directory
-      fs.writeFileSync(destinationPath, fileContent);
+      // Archive the task file before deleting it
+      await archiveTask(tasksDir, archiveDir, slugValue);
 
-      // Delete the original file
-      fs.unlinkSync(sourcePath);
+      // Delete the task using the use case
+      const deletedTask = await deleteTaskUseCase.execute(slug);
 
-      console.log(`🗑️ Archived task: ${frontMatter.title}`);
+      console.log(`🗑️ Archived task: ${deletedTask.title.value}`);
     } catch (error) {
-      console.warn(`⚠️ Error archiving task file: ${filename}`, error);
+      console.warn(`⚠️ Error deleting task: ${slugValue}`, error);
     }
+  }
+}
+
+/**
+ * Archives a task file by copying it to the archive directory
+ *
+ * @param tasksDir - The directory containing task files
+ * @param archiveDir - The archive directory
+ * @param slugValue - The slug value of the task to archive
+ */
+async function archiveTask(
+  tasksDir: string,
+  archiveDir: string,
+  slugValue: string
+): Promise<void> {
+  const filename = `${slugValue}.md`;
+  const sourcePath = path.join(tasksDir, filename);
+  const destinationPath = path.join(archiveDir, filename);
+
+  try {
+    // Read the file content
+    const fileContent = fs.readFileSync(sourcePath, "utf8");
+
+    // Write the file to the archive directory
+    fs.writeFileSync(destinationPath, fileContent);
+  } catch (error) {
+    console.warn(`⚠️ Error archiving task file: ${filename}`, error);
+    throw error;
   }
 }

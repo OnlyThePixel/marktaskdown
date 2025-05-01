@@ -2,7 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import { deleteCommand } from "./delete.js";
 import { checkbox, confirm } from "@inquirer/prompts";
+import { DeleteTaskUseCase } from "../../../application/useCases/commands/DeleteTaskUseCase.js";
+import { FileSystemTaskRepository } from "../../../infrastructure/repositories/FileSystemTaskRepository.js";
+import { Task } from "../../../domain/entities/Task.js";
+import { Title } from "../../../domain/valueObjects/Title.js";
+import { Description } from "../../../domain/valueObjects/Description.js";
+import { TaskRepository } from "../../../domain/repositories/TaskRepository.js";
 
+// Mock the file system
 vi.mock("fs", () => ({
   default: {
     existsSync: vi.fn(),
@@ -26,18 +33,68 @@ vi.mock("@inquirer/prompts", () => ({
   confirm: vi.fn(),
 }));
 
+// Mock the DeleteTaskUseCase and FileSystemTaskRepository
+vi.mock("../../../application/useCases/commands/DeleteTaskUseCase.js");
+vi.mock("../../../infrastructure/repositories/FileSystemTaskRepository.js");
+
 describe("Delete Command", () => {
   const mockCwd = "/mock/current/dir";
   const tasksDir = `${mockCwd}/tasks`;
   const archiveDir = `${tasksDir}/.archive`;
 
   const originalCwd = process.cwd;
+  let mockTaskRepository: TaskRepository;
+  let mockDeleteTaskUseCase: DeleteTaskUseCase;
+  let mockTasks: Task[];
 
   beforeEach(() => {
     process.cwd = vi.fn().mockReturnValue(mockCwd);
     vi.spyOn(console, "log");
     vi.spyOn(console, "warn");
     vi.clearAllMocks();
+
+    // Create mock tasks
+    mockTasks = [
+      new Task(
+        new Title("Task 1"),
+        new Description("Task 1 description"),
+        false,
+        "1"
+      ),
+      new Task(
+        new Title("Task 2"),
+        new Description("Task 2 description"),
+        true,
+        "2"
+      ),
+    ];
+
+    // Setup mock repository
+    mockTaskRepository = {
+      findAll: vi.fn().mockResolvedValue(mockTasks),
+      delete: vi.fn().mockResolvedValue(undefined),
+      findBySlug: vi.fn().mockImplementation((slug) => {
+        const task = mockTasks.find((t) => t.slug.value === slug.value);
+        return Promise.resolve(task || null);
+      }),
+    } as unknown as TaskRepository;
+
+    // Setup mock use case
+    mockDeleteTaskUseCase = {
+      execute: vi.fn().mockImplementation(async (slug) => {
+        const task = mockTasks.find((t) => t.slug.value === slug.value);
+        if (!task) throw new Error("Task not found");
+        return task;
+      }),
+    } as unknown as DeleteTaskUseCase;
+
+    // Mock the constructors
+    vi.mocked(FileSystemTaskRepository).mockImplementation(
+      () => mockTaskRepository as unknown as FileSystemTaskRepository
+    );
+    vi.mocked(DeleteTaskUseCase).mockImplementation(
+      () => mockDeleteTaskUseCase
+    );
   });
 
   afterEach(() => {
@@ -71,36 +128,18 @@ describe("Delete Command", () => {
 
   it("should handle when no tasks are found", async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readdirSync).mockReturnValue([]);
+
+    // Mock repository to return empty array
+    vi.mocked(mockTaskRepository.findAll).mockResolvedValueOnce([]);
 
     await deleteCommand();
 
-    expect(fs.readdirSync).toHaveBeenCalledWith(tasksDir);
+    expect(mockTaskRepository.findAll).toHaveBeenCalled();
     expect(console.log).toHaveBeenCalledWith("📝 No tasks found.");
   });
 
   it("should list all tasks regardless of status", async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readdirSync).mockReturnValue([
-      "task-1.md",
-      "task-2.md",
-    ] as unknown as fs.Dirent[]);
-
-    // Mock statSync to return an object with isFile method
-    vi.mocked(fs.statSync).mockImplementation(() => {
-      return {
-        isFile: () => true,
-      } as fs.Stats;
-    });
-
-    // Mock readFileSync to return different content for each file
-    vi.mocked(fs.readFileSync)
-      .mockReturnValueOnce(
-        "---\ntitle: Task 1\nis_done: false\n---\n\nTask 1 description"
-      )
-      .mockReturnValueOnce(
-        "---\ntitle: Task 2\nis_done: true\n---\n\nTask 2 description"
-      );
 
     // Mock checkbox to return empty array to exit early
     vi.mocked(checkbox).mockResolvedValueOnce([]);
@@ -110,8 +149,8 @@ describe("Delete Command", () => {
     expect(checkbox).toHaveBeenCalledWith({
       message: "Select tasks to delete",
       choices: [
-        { name: "Task 1 (PENDING)", value: "task-1.md" },
-        { name: "Task 2 (DONE)", value: "task-2.md" },
+        { name: "Task 1 (PENDING)", value: "1-task-1" },
+        { name: "Task 2 (DONE)", value: "2-task-2" },
       ],
     });
   });
@@ -180,80 +219,67 @@ describe("Delete Command", () => {
     expect(fs.unlinkSync).not.toHaveBeenCalled();
   });
 
-  it("should successfully archive selected tasks", async () => {
+  it("should use DeleteTaskUseCase to delete selected tasks", async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readdirSync).mockReturnValue([
-      "task-1.md",
-      "task-2.md",
-    ] as unknown as fs.Dirent[]);
-
-    // Mock statSync to return an object with isFile method
-    vi.mocked(fs.statSync).mockImplementation(() => {
-      return {
-        isFile: () => true,
-      } as fs.Stats;
-    });
-
-    // Mock readFileSync to return different content for each file
-    const task1Content =
-      "---\ntitle: Task 1\nis_done: false\n---\n\nTask 1 description";
-    const task2Content =
-      "---\ntitle: Task 2\nis_done: true\n---\n\nTask 2 description";
-
-    vi.mocked(fs.readFileSync)
-      .mockReturnValueOnce(task1Content)
-      .mockReturnValueOnce(task2Content)
-      // Mock the second call to readFileSync for the selected tasks
-      .mockReturnValueOnce(task1Content)
-      .mockReturnValueOnce(task2Content);
 
     // Mock checkbox to return selected tasks
-    vi.mocked(checkbox).mockResolvedValueOnce(["task-1.md", "task-2.md"]);
+    vi.mocked(checkbox).mockResolvedValueOnce(["1-task-1", "2-task-2"]);
 
     // Mock confirm to return true (proceed)
     vi.mocked(confirm).mockResolvedValueOnce(true);
 
     await deleteCommand();
 
-    // Check if files were written to archive
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
-      `${archiveDir}/task-1.md`,
-      task1Content
+    // Verify that the use case was called for each selected task
+    expect(mockDeleteTaskUseCase.execute).toHaveBeenCalledTimes(2);
+    expect(mockDeleteTaskUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ value: "1-task-1" })
     );
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
-      `${archiveDir}/task-2.md`,
-      task2Content
+    expect(mockDeleteTaskUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ value: "2-task-2" })
     );
-
-    // Check if original files were deleted
-    expect(fs.unlinkSync).toHaveBeenCalledWith(`${tasksDir}/task-1.md`);
-    expect(fs.unlinkSync).toHaveBeenCalledWith(`${tasksDir}/task-2.md`);
 
     // Check success messages
     expect(console.log).toHaveBeenCalledWith("🗑️ Archived task: Task 1");
     expect(console.log).toHaveBeenCalledWith("🗑️ Archived task: Task 2");
   });
 
+  it("should archive tasks when deleting them", async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+
+    // Mock checkbox to return selected tasks
+    vi.mocked(checkbox).mockResolvedValueOnce(["1-task-1"]);
+
+    // Mock confirm to return true (proceed)
+    vi.mocked(confirm).mockResolvedValueOnce(true);
+
+    // Mock readFileSync to return content for the task
+    const taskContent =
+      "---\ntitle: Task 1\nis_done: false\n---\n\nTask 1 description";
+    vi.mocked(fs.readFileSync).mockReturnValue(taskContent);
+
+    await deleteCommand();
+
+    // Check if file was written to archive
+    expect(fs.writeFileSync).toHaveBeenCalledWith(
+      `${archiveDir}/1-task-1.md`,
+      taskContent
+    );
+
+    // Verify that the use case was called
+    expect(mockDeleteTaskUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ value: "1-task-1" })
+    );
+  });
+
   it("should handle invalid files", async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readdirSync).mockReturnValue([
-      "invalid-task.md",
-      "task-2.md",
-    ] as unknown as fs.Dirent[]);
 
-    // Mock statSync to return an object with isFile method
-    vi.mocked(fs.statSync).mockImplementation(() => {
-      return {
-        isFile: () => true,
-      } as fs.Stats;
+    // Mock repository to throw an error when finding tasks
+    vi.mocked(mockTaskRepository.findAll).mockImplementationOnce(() => {
+      console.warn("⚠️ Warning: Could not parse task file: invalid-task.md");
+      return Promise.resolve([mockTasks[1]]);
     });
-
-    // Mock readFileSync to return invalid content for first file and valid for second
-    vi.mocked(fs.readFileSync)
-      .mockReturnValueOnce("Not a valid YAML front-matter")
-      .mockReturnValueOnce(
-        "---\ntitle: Task 2\nis_done: false\n---\n\nTask 2 description"
-      );
 
     // Mock checkbox to return empty array to exit early
     vi.mocked(checkbox).mockResolvedValueOnce([]);
@@ -265,37 +291,45 @@ describe("Delete Command", () => {
     );
     expect(checkbox).toHaveBeenCalledWith({
       message: "Select tasks to delete",
-      choices: [{ name: "Task 2 (PENDING)", value: "task-2.md" }],
+      choices: [{ name: "Task 2 (DONE)", value: "2-task-2" }],
     });
+  });
+
+  it("should handle errors when deleting tasks", async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+
+    // Mock checkbox to return selected tasks
+    vi.mocked(checkbox).mockResolvedValueOnce(["1-task-1"]);
+
+    // Mock confirm to return true (proceed)
+    vi.mocked(confirm).mockResolvedValueOnce(true);
+
+    // Mock use case to throw an error
+    vi.mocked(mockDeleteTaskUseCase.execute).mockRejectedValueOnce(
+      new Error("Mock delete error")
+    );
+
+    await deleteCommand();
+
+    expect(console.warn).toHaveBeenCalledWith(
+      "⚠️ Error deleting task: 1-task-1",
+      expect.any(Error)
+    );
   });
 
   it("should handle errors when archiving tasks", async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readdirSync).mockReturnValue([
-      "task-1.md",
-    ] as unknown as fs.Dirent[]);
-
-    // Mock statSync to return an object with isFile method
-    vi.mocked(fs.statSync).mockImplementation(() => {
-      return {
-        isFile: () => true,
-      } as fs.Stats;
-    });
-
-    // Mock readFileSync to return content
-    vi.mocked(fs.readFileSync)
-      .mockReturnValueOnce(
-        "---\ntitle: Task 1\nis_done: false\n---\n\nTask 1 description"
-      )
-      .mockReturnValueOnce(
-        "---\ntitle: Task 1\nis_done: false\n---\n\nTask 1 description"
-      );
 
     // Mock checkbox to return selected tasks
-    vi.mocked(checkbox).mockResolvedValueOnce(["task-1.md"]);
+    vi.mocked(checkbox).mockResolvedValueOnce(["1-task-1"]);
 
     // Mock confirm to return true (proceed)
     vi.mocked(confirm).mockResolvedValueOnce(true);
+
+    // Mock readFileSync to return content
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      "---\ntitle: Task 1\nis_done: false\n---\n\nTask 1 description"
+    );
 
     // Mock writeFileSync to throw an error
     vi.mocked(fs.writeFileSync).mockImplementation(() => {
@@ -304,8 +338,16 @@ describe("Delete Command", () => {
 
     await deleteCommand();
 
+    // The use case should not be called because archiving fails first
+    expect(mockDeleteTaskUseCase.execute).not.toHaveBeenCalled();
+
     expect(console.warn).toHaveBeenCalledWith(
-      "⚠️ Error archiving task file: task-1.md",
+      "⚠️ Error archiving task file: 1-task-1.md",
+      expect.any(Error)
+    );
+
+    expect(console.warn).toHaveBeenCalledWith(
+      "⚠️ Error deleting task: 1-task-1",
       expect.any(Error)
     );
   });
