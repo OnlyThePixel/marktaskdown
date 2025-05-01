@@ -66,7 +66,23 @@ export class MarkdownFileAdapter {
     content = "\n" + content;
 
     // Create file content with YAML front matter
-    const fileContent = matter.stringify(content, frontMatter);
+    let fileContent = matter.stringify(content, frontMatter);
+
+    // Ensure quoted string values in front matter are quoted with double quotes
+    fileContent = fileContent.replace(
+      /^---\n([\s\S]*?)---/m,
+      (frontMatterBlock) => {
+        let processedBlock = frontMatterBlock;
+
+        // Replace any single-quoted values with double-quoted values
+        processedBlock = processedBlock.replace(
+          /: '((?:[^']|\\')+)'/g,
+          ': "$1"'
+        );
+
+        return processedBlock;
+      }
+    );
 
     // Write to file
     fs.writeFileSync(filePath, fileContent);

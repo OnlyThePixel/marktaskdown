@@ -1,23 +1,14 @@
 import fs from "fs";
 import path from "path";
-import matter from "gray-matter";
 import { checkbox } from "@inquirer/prompts";
-
-interface TaskFrontMatter {
-  title: string;
-  is_done: boolean;
-}
-
-interface TaskChoice {
-  name: string;
-  value: string;
-  message: string;
-}
+import { SetTaskAsDoneUseCase } from "../../../application/useCases/commands/SetTaskAsDoneUseCase.js";
+import { FileSystemTaskRepository } from "../../../infrastructure/repositories/FileSystemTaskRepository.js";
 
 /**
  * Mark tasks as done
  *
  * Lists all undone tasks and allows selecting which ones to mark as done
+ * Uses SetTaskAsDoneUseCase to mark tasks as done
  */
 export async function doneCommand(): Promise<void> {
   const cwd = process.cwd();
@@ -29,103 +20,62 @@ export async function doneCommand(): Promise<void> {
     return;
   }
 
-  const tasksFiles = fs.readdirSync(tasksDir);
+  // Create repository and use case
+  const taskRepository = new FileSystemTaskRepository(tasksDir);
+  const setTaskAsDoneUseCase = new SetTaskAsDoneUseCase(taskRepository);
 
-  // Filter for markdown files
-  const markdownFiles = tasksFiles.filter((filename) => {
-    const filePath = path.join(tasksDir, filename);
-    return fs.statSync(filePath).isFile() && filePath.endsWith(".md");
-  });
+  // Get all tasks
+  const tasks = await taskRepository.findAll();
 
-  if (markdownFiles.length === 0) {
+  if (tasks.length === 0) {
     console.log("📝 No tasks found.");
     return;
   }
 
-  // Parse task files and filter for undone tasks
-  const undoneTasks: TaskChoice[] = [];
-
-  for (const filename of markdownFiles) {
-    const filePath = path.join(tasksDir, filename);
-
-    try {
-      const fileContent = fs.readFileSync(filePath, "utf8");
-      const { data } = matter(fileContent);
-      const frontMatter = data as TaskFrontMatter;
-
-      if (!frontMatter.title) {
-        console.warn(`⚠️ Warning: Could not parse task file: ${filename}`);
-        continue;
-      }
-
-      // Only include undone tasks
-      if (frontMatter.is_done === false) {
-        undoneTasks.push({
-          name: filename,
-          value: filename,
-          message: frontMatter.title,
-        });
-      }
-    } catch {
-      console.warn(`⚠️ Warning: Could not parse task file: ${filename}`);
-    }
-  }
+  // Filter for undone tasks
+  const undoneTasks = tasks.filter((task) => !task.isDone);
 
   if (undoneTasks.length === 0) {
     console.log("📝 No undone tasks found.");
     return;
   }
 
-  // Prompt user to select tasks to mark as done
-  const selectedTasks = await checkbox({
-    message: "Select tasks to mark as done",
-    choices: undoneTasks.map((task) => ({
-      name: task.message,
-      value: task.value,
-    })),
+  // Prepare choices for the checkbox prompt
+  const choices = undoneTasks.map((task) => {
+    return {
+      name: task.title.value,
+      value: task.slug.value,
+    };
   });
 
-  if (!selectedTasks || selectedTasks.length === 0) {
+  // Prompt user to select tasks to mark as done
+  const selectedSlugs = await checkbox({
+    message: "Select tasks to mark as done",
+    choices,
+  });
+
+  if (!selectedSlugs || selectedSlugs.length === 0) {
     console.log("❌ No tasks selected.");
     return;
   }
 
   // Mark selected tasks as done
-  for (const filename of selectedTasks) {
-    const filePath = path.join(tasksDir, filename);
-
+  for (const slugValue of selectedSlugs) {
     try {
-      const fileContent = fs.readFileSync(filePath, "utf8");
-      const parsedContent = matter(fileContent);
-      const frontMatter = parsedContent.data as TaskFrontMatter; // TODO: Parse data to TaskFrontMatter
+      // Find the task in the list of undone tasks
+      const task = undoneTasks.find((task) => task.slug.value === slugValue);
 
-      // Update is_done to true
-      frontMatter.is_done = true;
+      if (!task) {
+        console.log(`❌ Task not found with slug: ${slugValue}`);
+        continue;
+      }
 
-      // Write updated content back to file
-      let updatedContent = matter.stringify(parsedContent.content, frontMatter);
+      // Execute use case to mark task as done
+      await setTaskAsDoneUseCase.execute(task.slug);
 
-      // Ensure quoted string values in front matter are properly quoted with double quotes
-      updatedContent = updatedContent.replace(
-        /^---\n([\s\S]*?)---/m,
-        (frontMatterBlock) => {
-          let processedBlock = frontMatterBlock;
-
-          // Replace any single-quoted values with double-quoted values
-          processedBlock = processedBlock.replace(
-            /: '((?:[^']|\\')+)'/g,
-            ': "$1"'
-          );
-
-          return processedBlock;
-        }
-      );
-
-      fs.writeFileSync(filePath, updatedContent);
-
-      console.log(`✅ Marked task as done: ${frontMatter.title}`);
-    } catch {
-      console.warn(`⚠️ Error updating task file: ${filename}`);
+      console.log(`✅ Marked task as done: ${task.title.value}`);
+    } catch (error) {
+      console.log(`❌ Error marking task as done: ${slugValue}`, error);
     }
   }
 }

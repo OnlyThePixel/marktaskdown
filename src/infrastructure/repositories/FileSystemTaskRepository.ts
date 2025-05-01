@@ -77,12 +77,15 @@ export class FileSystemTaskRepository implements TaskRepository {
       const frontMatter = fileData.frontMatter as TaskFrontMatter;
       const content = fileData.content;
 
+      // Extract id from slug
+      const id = slug.value.split("-").shift() || "";
+
       // Create and return Task entity
       const task = new Task(
         new Title(frontMatter.title),
         new Description(content),
         frontMatter.is_done,
-        slug.value.split("-").at(0) // Use the first part of the slug as the ID
+        id
       );
 
       return task;
@@ -119,13 +122,14 @@ export class FileSystemTaskRepository implements TaskRepository {
         // Extract slug from filename
         const filename = path.basename(filePath);
         const slug = filename.replace(/\.md$/, "");
+        const id = slug.split("-").shift() || "";
 
         // Create Task entity
         const task = new Task(
           new Title(frontMatter.title),
           new Description(content),
           frontMatter.is_done,
-          slug.split("-").at(0)
+          id
         );
 
         tasks.push(task);

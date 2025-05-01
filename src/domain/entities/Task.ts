@@ -55,6 +55,16 @@ export class Task {
   }
 
   /**
+   * Get the ID of the task
+   * The ID is the last part of the slug
+   *
+   * @returns The ID of the task
+   */
+  get id(): string {
+    return this.#slug.value.split("-").shift() || "";
+  }
+
+  /**
    * Get the slug of the task
    */
   get slug(): Slug {
