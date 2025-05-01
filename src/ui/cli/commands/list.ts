@@ -3,26 +3,16 @@ import path from "path";
 import { render } from "ink";
 import React from "react";
 import { Table } from "../../Table.js";
-import matter from "gray-matter";
-
-interface TaskFrontMatter {
-  title: string;
-  is_done: boolean;
-}
-
-/**
- * Extract slug from filename
- */
-function getSlugFromFilename(filename: string): string {
-  return filename.replace(/\.md$/, "");
-}
+import { GetAllTasksUseCase } from "../../../application/useCases/queries/GetAllTasksUseCase.js";
+import { FileSystemTaskRepository } from "../../../infrastructure/repositories/FileSystemTaskRepository.js";
+import { Task } from "../../../domain/entities/Task.js";
 
 /**
  * List all tasks
  *
- * Reads all markdown files in the tasks directory and displays them in a table
+ * Retrieves all tasks using the GetAllTasksUseCase and displays them in a table
  */
-export function listCommand(): void {
+export async function listCommand(): Promise<void> {
   const cwd = process.cwd();
   const tasksDir = path.join(cwd, "tasks");
 
@@ -31,47 +21,25 @@ export function listCommand(): void {
     return;
   }
 
-  const tasksFiles = fs.readdirSync(tasksDir);
+  // Create repository and use case
+  const taskRepository = new FileSystemTaskRepository(tasksDir);
+  const getAllTasksUseCase = new GetAllTasksUseCase(taskRepository);
 
-  const markdownFiles = tasksFiles.filter((filename) => {
-    const filePath = path.join(tasksDir, filename);
+  // Execute use case to get all tasks
+  const tasks = await getAllTasksUseCase.execute();
 
-    return fs.statSync(filePath).isFile() && filePath.endsWith(".md");
-  });
-
-  if (markdownFiles.length === 0) {
+  if (tasks.length === 0) {
     console.log("📝 No tasks found.");
-
     return;
   }
 
-  const tasks = markdownFiles
-    .map((filename) => {
-      const filePath = path.join(tasksDir, filename);
+  // Transform domain entities to presentation format
+  const tableData = tasks.map((task: Task) => ({
+    slug: task.slug.value,
+    title: task.title.value,
+    status: task.isDone ? "DONE" : "PENDING",
+  }));
 
-      try {
-        const fileContent = fs.readFileSync(filePath, "utf8");
-        const { data } = matter(fileContent);
-        const frontMatter = data as TaskFrontMatter; // TODO: Parse data to TaskFrontMatter
-
-        if (!frontMatter.title) {
-          console.warn(`⚠️ Warning: Could not parse task file: ${filename}`);
-
-          return null;
-        }
-
-        return {
-          slug: getSlugFromFilename(filename),
-          title: frontMatter.title,
-          status: frontMatter.is_done ? "DONE" : "PENDING",
-        };
-      } catch {
-        console.warn(`⚠️ Warning: Could not parse task file: ${filename}`);
-
-        return null;
-      }
-    })
-    .filter((task) => task !== null); // Remove null entries
-
-  render(React.createElement(Table, { data: tasks }));
+  // Render the table
+  render(React.createElement(Table, { data: tableData }));
 }

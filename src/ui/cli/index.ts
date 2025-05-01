@@ -43,7 +43,12 @@ program
     await addCommand(title, options);
   });
 
-program.command("list").description("List all tasks").action(listCommand);
+program
+  .command("list")
+  .description("List all tasks")
+  .action(async () => {
+    await listCommand();
+  });
 
 program.command("done").description("Mark tasks as done").action(doneCommand);
 
