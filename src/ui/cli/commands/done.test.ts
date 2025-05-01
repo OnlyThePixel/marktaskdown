@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "fs";
-import { doneCommand } from "../src/commands/done.js";
+import { doneCommand } from "./done.js";
 import { checkbox } from "@inquirer/prompts";
 
 vi.mock("fs", () => ({

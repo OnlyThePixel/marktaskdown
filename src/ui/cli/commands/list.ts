@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { render } from "ink";
 import React from "react";
-import { Table } from "../ui/Table.js";
+import { Table } from "../../Table.js";
 import matter from "gray-matter";
 
 interface TaskFrontMatter {

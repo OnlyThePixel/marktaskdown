@@ -130,7 +130,7 @@ describe("MarkdownFileAdapter", () => {
 
       // Assert
       expect(matter.stringify).toHaveBeenCalledWith(
-        testContent,
+        "\n" + testContent,
         testFrontMatter
       );
       expect(fs.writeFileSync).toHaveBeenCalledWith(

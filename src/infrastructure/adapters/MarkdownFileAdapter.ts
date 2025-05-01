@@ -61,6 +61,10 @@ export class MarkdownFileAdapter {
       fs.mkdirSync(dirPath, { recursive: true });
     }
 
+    // Add a newline at the beginning of the content to ensure that
+    // the front matter is separated from the content to avoid lint errors
+    content = "\n" + content;
+
     // Create file content with YAML front matter
     const fileContent = matter.stringify(content, frontMatter);
 

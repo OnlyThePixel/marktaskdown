@@ -1,4 +1,4 @@
-import { InitializeProjectUseCase } from "../application/useCases/commands/InitializeProjectUseCase.js";
+import { InitializeProjectUseCase } from "../../../application/useCases/commands/InitializeProjectUseCase.js";
 
 /**
  * Initialize the tasks directory

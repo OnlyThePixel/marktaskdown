@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "fs";
-import { deleteCommand } from "../src/commands/delete.js";
+import { deleteCommand } from "./delete.js";
 import { checkbox, confirm } from "@inquirer/prompts";
 
 vi.mock("fs", () => ({

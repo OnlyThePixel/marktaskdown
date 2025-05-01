@@ -6,12 +6,10 @@
   "author": "",
   "type": "module",
   "bin": {
-    "mtd": "./dist/cli.js"
+    "mtd": "./dist/index.js"
   },
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch",
-    "start": "node dist/cli.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint . && prettier --check .",

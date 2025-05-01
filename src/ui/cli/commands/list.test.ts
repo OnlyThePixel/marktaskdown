@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "fs";
-import { listCommand } from "../src/commands/list.js";
+import { listCommand } from "./list.js";
 
 vi.mock("fs", () => ({
   default: {

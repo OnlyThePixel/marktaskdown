@@ -11,7 +11,7 @@ export class Description {
    * @param value - The description string value
    * @throws Error if the description is invalid
    */
-  constructor(value: string) {
+  constructor(value: string = "<!-- Add your task details here -->") {
     const trimmedValue = value.trim();
     this.validateDescription(trimmedValue);
     this.#value = trimmedValue;

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { initCommand } from "../src/commands/init.js";
-import { InitializeProjectUseCase } from "../src/application/useCases/commands/InitializeProjectUseCase.js";
+import { initCommand } from "./init.js";
+import { InitializeProjectUseCase } from "../../../application/useCases/commands/InitializeProjectUseCase.js";
 
 // Mock the InitializeProjectUseCase
-vi.mock("../src/application/useCases/commands/InitializeProjectUseCase.js");
+vi.mock("../../../application/useCases/commands/InitializeProjectUseCase.js");
 
 describe("Init Command", () => {
   const mockCwd = "/mock/current/dir";
