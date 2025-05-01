@@ -149,8 +149,12 @@ describe("Delete Command", () => {
     expect(checkbox).toHaveBeenCalledWith({
       message: "Select tasks to delete",
       choices: [
-        { name: "Task 1 (PENDING)", value: "1-task-1" },
-        { name: "Task 2 (DONE)", value: "2-task-2" },
+        {
+          name: "Task 1 (PENDING)",
+          value: "1-task-1",
+          message: "Task 1 (PENDING)",
+        },
+        { name: "Task 2 (DONE)", value: "2-task-2", message: "Task 2 (DONE)" },
       ],
     });
   });
@@ -291,7 +295,9 @@ describe("Delete Command", () => {
     );
     expect(checkbox).toHaveBeenCalledWith({
       message: "Select tasks to delete",
-      choices: [{ name: "Task 2 (DONE)", value: "2-task-2" }],
+      choices: [
+        { name: "Task 2 (DONE)", value: "2-task-2", message: "Task 2 (DONE)" },
+      ],
     });
   });
 

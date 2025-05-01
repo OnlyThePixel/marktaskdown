@@ -155,12 +155,14 @@ describe("Done Command", () => {
       message: "Select tasks to mark as done",
       choices: expect.arrayContaining([
         expect.objectContaining({
-          name: task1.title.value,
+          name: `${task1.title.value} (PENDING)`,
           value: task1.slug.value,
+          message: `${task1.title.value} (PENDING)`,
         }),
         expect.objectContaining({
-          name: task2.title.value,
+          name: `${task2.title.value} (PENDING)`,
           value: task2.slug.value,
+          message: `${task2.title.value} (PENDING)`,
         }),
       ]),
     });

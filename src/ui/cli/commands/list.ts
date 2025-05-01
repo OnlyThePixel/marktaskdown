@@ -5,7 +5,7 @@ import React from "react";
 import { Table } from "../../Table.js";
 import { GetAllTasksUseCase } from "../../../application/useCases/queries/GetAllTasksUseCase.js";
 import { FileSystemTaskRepository } from "../../../infrastructure/repositories/FileSystemTaskRepository.js";
-import { Task } from "../../../domain/entities/Task.js";
+import { TaskPresenter } from "../../presenters/TaskPresenter.js";
 
 /**
  * List all tasks
@@ -33,12 +33,8 @@ export async function listCommand(): Promise<void> {
     return;
   }
 
-  // Transform domain entities to presentation format
-  const tableData = tasks.map((task: Task) => ({
-    slug: task.slug.value,
-    title: task.title.value,
-    status: task.isDone ? "DONE" : "PENDING",
-  }));
+  // Use TaskPresenter to format tasks for table display
+  const tableData = TaskPresenter.toTableDataList(tasks);
 
   // Render the table
   render(React.createElement(Table, { data: tableData }));

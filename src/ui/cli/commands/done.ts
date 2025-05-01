@@ -3,6 +3,7 @@ import path from "path";
 import { checkbox } from "@inquirer/prompts";
 import { SetTaskAsDoneUseCase } from "../../../application/useCases/commands/SetTaskAsDoneUseCase.js";
 import { FileSystemTaskRepository } from "../../../infrastructure/repositories/FileSystemTaskRepository.js";
+import { TaskPresenter } from "../../presenters/TaskPresenter.js";
 
 /**
  * Mark tasks as done
@@ -40,13 +41,8 @@ export async function doneCommand(): Promise<void> {
     return;
   }
 
-  // Prepare choices for the checkbox prompt
-  const choices = undoneTasks.map((task) => {
-    return {
-      name: task.title.value,
-      value: task.slug.value,
-    };
-  });
+  // Use TaskPresenter to format tasks for checkbox prompt
+  const choices = TaskPresenter.toListItems(undoneTasks);
 
   // Prompt user to select tasks to mark as done
   const selectedSlugs = await checkbox({

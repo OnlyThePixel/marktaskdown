@@ -4,6 +4,7 @@ import { checkbox, confirm } from "@inquirer/prompts";
 import { DeleteTaskUseCase } from "../../../application/useCases/commands/DeleteTaskUseCase.js";
 import { FileSystemTaskRepository } from "../../../infrastructure/repositories/FileSystemTaskRepository.js";
 import { Slug } from "../../../domain/valueObjects/Slug.js";
+import { TaskPresenter } from "../../presenters/TaskPresenter.js";
 
 /**
  * Delete tasks by moving them to archive
@@ -39,22 +40,13 @@ export async function deleteCommand(): Promise<void> {
     return;
   }
 
-  // Prepare choices for the checkbox prompt
-  const choices = tasks.map((task) => {
-    return {
-      name: `${task.title.value} ${task.isDone ? "(DONE)" : "(PENDING)"}`,
-      value: task.slug.value,
-      message: `${task.title.value} ${task.isDone ? "(DONE)" : "(PENDING)"}`,
-    };
-  });
+  // Use TaskPresenter to format tasks for checkbox prompt
+  const choices = TaskPresenter.toListItems(tasks);
 
   // Prompt user to select tasks to delete
   const selectedSlugs = await checkbox({
     message: "Select tasks to delete",
-    choices: choices.map((choice) => ({
-      name: choice.message,
-      value: choice.value,
-    })),
+    choices,
   });
 
   if (!selectedSlugs || selectedSlugs.length === 0) {
