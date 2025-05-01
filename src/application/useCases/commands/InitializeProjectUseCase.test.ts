@@ -54,14 +54,12 @@ describe("InitializeProjectUseCase", () => {
 
   it("uses a default repository when none is provided", async () => {
     // Setup mock implementation for FileSystemProjectRepository
-    const mockInitialize = vi.fn().mockResolvedValue(true);
-    const mockGetPath = vi.fn().mockReturnValue(tasksDir);
+    const mockRepository = createMockProjectRepository(true, tasksDir);
 
-    vi.mocked(FileSystemProjectRepository).mockImplementation(() => ({
-      initializeTasksDirectory: mockInitialize,
-      getTasksDirectoryPath: mockGetPath,
-      tasksDir: tasksDir,
-    }));
+    // Mock the constructor to return our mock repository
+    vi.mocked(FileSystemProjectRepository).mockImplementation(
+      () => mockRepository as unknown as FileSystemProjectRepository
+    );
 
     // Arrange
     const useCase = new InitializeProjectUseCase();
@@ -70,8 +68,8 @@ describe("InitializeProjectUseCase", () => {
     const result = await useCase.execute();
 
     // Assert
-    expect(mockInitialize).toHaveBeenCalledTimes(1);
-    expect(mockGetPath).toHaveBeenCalledTimes(1);
+    expect(mockRepository.initializeTasksDirectory).toHaveBeenCalledTimes(1);
+    expect(mockRepository.getTasksDirectoryPath).toHaveBeenCalledTimes(1);
     expect(result.created).toBe(true);
     expect(result.tasksDir).toBe(tasksDir);
   });
