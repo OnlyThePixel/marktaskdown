@@ -4,6 +4,8 @@ import { TaskRepository } from "../../../domain/repositories/TaskRepository.js";
 import { Task } from "../../../domain/entities/Task.js";
 import { Slug } from "../../../domain/valueObjects/Slug.js";
 import { CreateTaskDTO } from "../../dtos/CreateTaskDTO.js";
+import { Title } from "../../../domain/valueObjects/Title.js";
+import { Description } from "../../../domain/valueObjects/Description.js";
 
 // Mock implementation of TaskRepository for testing
 class MockTaskRepository implements TaskRepository {
@@ -79,21 +81,58 @@ describe("CreateTaskUseCase", () => {
     expect(savedTask?.isDone).toBe(false);
   });
 
-  it("should use the provided ID for slug generation if available", async () => {
+  it("should generate ID 1 for the first task when no tasks exist", async () => {
     // Arrange
     const createTaskDTO: CreateTaskDTO = {
-      title: "Test Task",
-      description: "This is a test task",
-      id: "123",
+      title: "First Task",
+      description: "This is the first task",
     };
 
     // Act
     const result = await useCase.execute(createTaskDTO);
 
     // Assert
-    expect(result.slug.value).toContain("123-");
+    expect(result.id).toBe("1");
+    expect(result.slug.value.startsWith("1-")).toBe(true);
+  });
 
-    const savedTask = repository.getLastSavedTask();
-    expect(savedTask?.slug.value).toContain("123-");
+  it("should generate incremental ID based on highest existing task ID", async () => {
+    // Arrange - Add existing tasks with specific IDs
+    await repository.save(
+      new Task(
+        new Title("Existing Task 1"),
+        new Description("Description 1"),
+        false,
+        "5"
+      )
+    );
+    await repository.save(
+      new Task(
+        new Title("Existing Task 2"),
+        new Description("Description 2"),
+        false,
+        "10"
+      )
+    );
+    await repository.save(
+      new Task(
+        new Title("Existing Task 3"),
+        new Description("Description 3"),
+        false,
+        "3"
+      )
+    );
+
+    const createTaskDTO: CreateTaskDTO = {
+      title: "New Task",
+      description: "This is a new task",
+    };
+
+    // Act
+    const result = await useCase.execute(createTaskDTO);
+
+    // Assert
+    expect(result.id).toBe("11"); // Should be highest (10) + 1
+    expect(result.slug.value.startsWith("11-")).toBe(true);
   });
 });
