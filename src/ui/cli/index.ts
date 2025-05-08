@@ -50,7 +50,13 @@ program
     await listCommand();
   });
 
-program.command("done").description("Mark tasks as done").action(doneCommand);
+program
+  .command("done")
+  .description("Mark tasks as done")
+  .argument("[slugs...]", "Task slugs to mark as done (optional)")
+  .action(async (slugs) => {
+    await doneCommand(slugs);
+  });
 
 program
   .command("delete")

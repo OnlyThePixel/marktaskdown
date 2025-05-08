@@ -1,6 +1,6 @@
 ---
 title: Enhance the done Command with CLI Arguments and Options
-is_done: false
+is_done: true
 ---
 
 # Enhance the `done` Command with CLI Arguments and Options

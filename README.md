@@ -52,10 +52,18 @@ Displays a table of all tasks with their status.
 ### Mark Tasks as Done
 
 ```bash
-mtd done
+mtd done [slugs...]
 ```
 
-Interactive prompt to select and mark tasks as completed.
+When called without arguments, provides an interactive prompt to select and mark tasks as completed.
+
+When called with task slugs as arguments, marks those specific tasks as done.
+
+Example:
+
+```bash
+mtd done task-1 task-2
+```
 
 ### Delete Tasks
 

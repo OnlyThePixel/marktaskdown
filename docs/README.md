@@ -50,9 +50,11 @@ A lightweight CLI for managing tasks as Markdown files with YAML front-matter.
    - Renders Ink table showing: slug | title | is_done.
    - Colour: green for done, red for pending.
 
-4. `mtd done` (interactive)
+4. `mtd done` [slugs...] (interactive or direct)
 
-   - Lists all tasks where `is_done == false` in a checkbox prompt.
+   - When called without arguments: Lists all tasks where `is_done == false` in a checkbox prompt.
+   - When called with task slugs as arguments: Marks those specific tasks as done.
+   - Example: `mtd done task-1 task-2` marks tasks with slugs "task-1" and "task-2" as done.
    - On confirm, toggles `is_done: true` in chosen files.
    - Success message per task.
 

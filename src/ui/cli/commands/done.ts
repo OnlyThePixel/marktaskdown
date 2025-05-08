@@ -4,14 +4,18 @@ import { checkbox } from "@inquirer/prompts";
 import { SetTaskAsDoneUseCase } from "../../../application/useCases/commands/SetTaskAsDoneUseCase.js";
 import { FileSystemTaskRepository } from "../../../infrastructure/repositories/FileSystemTaskRepository.js";
 import { TaskPresenter } from "../../presenters/TaskPresenter.js";
+import { Slug } from "../../../domain/valueObjects/Slug.js";
 
 /**
  * Mark tasks as done
  *
- * Lists all undone tasks and allows selecting which ones to mark as done
+ * When called without arguments, lists all undone tasks and allows selecting which ones to mark as done
+ * When called with task slugs as arguments, marks those specific tasks as done
  * Uses SetTaskAsDoneUseCase to mark tasks as done
+ *
+ * @param slugs - Optional array of task slugs to mark as done
  */
-export async function doneCommand(): Promise<void> {
+export async function doneCommand(slugs: string[] = []): Promise<void> {
   const cwd = process.cwd();
   const tasksDir = path.join(cwd, "tasks");
 
@@ -33,6 +37,25 @@ export async function doneCommand(): Promise<void> {
     return;
   }
 
+  // If slugs are provided as arguments, mark those tasks as done
+  if (slugs.length > 0) {
+    for (const slugValue of slugs) {
+      try {
+        // Create a Slug value object
+        const slug = new Slug(slugValue);
+
+        // Execute use case to mark task as done
+        const task = await setTaskAsDoneUseCase.execute(slug);
+
+        console.log(`✅ Marked task as done: ${task.title.value}`);
+      } catch (error) {
+        console.log(`❌ Error marking task as done: ${slugValue}`, error);
+      }
+    }
+    return;
+  }
+
+  // If no slugs provided, show interactive prompt
   // Filter for undone tasks
   const undoneTasks = tasks.filter((task) => !task.isDone);
 
