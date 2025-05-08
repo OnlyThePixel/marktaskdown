@@ -23,6 +23,7 @@
     "@inquirer/prompts": "^7.5.0",
     "@modelcontextprotocol/sdk": "^1.11.1",
     "commander": "^13.1.0",
+    "express": "^5.1.0",
     "gray-matter": "^4.0.3",
     "ink": "^5.2.0",
     "react": "^18.3.1"
@@ -30,6 +31,7 @@
   "devDependencies": {
     "@eslint/compat": "^1.2.8",
     "@eslint/js": "^9.25.1",
+    "@types/express": "^5.0.1",
     "@types/node": "^22.15.2",
     "@types/react": "^19.1.2",
     "eslint": "^9.25.1",
