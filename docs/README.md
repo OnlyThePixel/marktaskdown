@@ -71,25 +71,41 @@ Nice-to-have polish (fits in 2-week window if time permits)
 
 ## 2. Architecture Overview
 
-Component diagram
+MarkTaskDown follows Domain-Driven Design (DDD) principles with a clean architecture approach. The codebase is organized into the following layers:
 
 ```mermaid
-flowchart TD
+graph TD
+    A[UI Layer] --> B[Application Layer]
+    B --> C[Domain Layer]
+    B --> D[Infrastructure Layer]
+    D --> C
 
-A["commander"] -->|commands| B["Command Handlers"]
-B --> C["File Manager"]
-C --> D["UI Layer (Ink)"]
+    subgraph "Domain Layer (Core)"
+        C1[Entities]
+        C2[Value Objects]
+        C3[Repository Interfaces]
+    end
 
-subgraph FileManager["File Manager"]
-  C1["slug utils"]
-  C2["YAML parse"]
-end
+    subgraph "Application Layer"
+        B1[Use Cases]
+        B2[DTOs]
+    end
 
-subgraph UILayer["UI Layer (Ink)"]
-D1["Tables"]
-D2["Prompt wrappers"]
-end
+    subgraph "Infrastructure Layer"
+        D1[Repositories]
+        D2[File System Adapter]
+    end
+
+    subgraph "UI Layer"
+        A1[CLI Interface]
+        A2[Presenters]
+    end
 ```
+
+For more detailed information about the architecture, see:
+
+- [architecture-plan.md](../architecture-plan.md) - Detailed architecture plan
+- [docs/DEVELOPER.md](./DEVELOPER.md) - Developer documentation
 
 ---
 
@@ -135,6 +151,10 @@ Stretch
 - Avoid over-abstraction; one file per command until complexity warrants split.
 - Keep external deps minimal; revisit after MVP.
 - Use Domain-Driven Design (DDD) approach for code organization.
+- Follow the Red-Green-Refactor TDD workflow:
+  - 🔴 RED: Write failing tests first that define the expected behavior
+  - 🟢 GREEN: Implement the minimal code needed to make tests pass
+  - ♻️ REFACTOR: Clean up the code while keeping tests passing
 
 ---
 

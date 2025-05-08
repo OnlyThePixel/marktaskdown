@@ -65,9 +65,16 @@ mtd delete
 
 Interactive prompt to select and archive tasks.
 
+## Architecture
+
+MarkTaskDown follows [Domain-Driven Design (DDD)](https://en.wikipedia.org/wiki/Domain-driven_design) principles with a clean architecture approach. For details on the architecture, see:
+
+- [architecture-plan.md](architecture-plan.md) - Detailed architecture plan
+- [docs/DEVELOPER.md](docs/DEVELOPER.md) - Developer documentation
+
 ## Development
 
-This project is in early development. See [docs/README.md](docs/README.md) for the detailed product requirements and roadmap.
+This project follows Test-Driven Development (TDD) practices. See [docs/README.md](docs/README.md) for the detailed product requirements and [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for development guidelines.
 
 ## License
 
