@@ -31,8 +31,8 @@ export class Description {
    * @throws Error if the description is invalid
    */
   private validateDescription(description: string): void {
-    if (description.length > 1000) {
-      throw new Error("Description cannot exceed 1000 characters");
+    if (description.length > 5000) {
+      throw new Error("Description cannot exceed 5000 characters");
     }
   }
 

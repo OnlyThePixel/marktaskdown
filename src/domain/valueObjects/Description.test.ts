@@ -29,12 +29,20 @@ describe("Description Value Object", () => {
 
     it("should throw error if description exceeds maximum length", () => {
       // Arrange
-      const longDescription = "a".repeat(1001);
+      const longDescription = "a".repeat(5001);
 
       // Act & Assert
       expect(() => new Description(longDescription)).toThrow(
-        "Description cannot exceed 1000 characters"
+        "Description cannot exceed 5000 characters"
       );
+    });
+
+    it("should allow descriptions up to 5000 characters", () => {
+      // Arrange
+      const maxLengthDescription = "a".repeat(5000);
+
+      // Act & Assert
+      expect(() => new Description(maxLengthDescription)).not.toThrow();
     });
   });
 
