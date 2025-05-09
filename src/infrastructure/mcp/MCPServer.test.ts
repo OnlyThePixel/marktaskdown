@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { MCPServer } from "./MCPServer.js";
+import { InitializeProjectUseCase } from "../../application/useCases/commands/InitializeProjectUseCase.js";
+import { InitializeProjectResultDTO } from "../../application/dtos/InitializeProjectResultDTO.js";
+import { Request, Response } from "express";
 
 describe("MCPServer", () => {
   let server: MCPServer;
@@ -103,5 +106,129 @@ describe("MCPServer", () => {
     const response = await server["handleError"](error);
 
     expect(response).toEqual(mockResponse);
+  });
+
+  it("should have an initialize project endpoint that returns a success response", async () => {
+    // Create a mock for the InitializeProjectUseCase
+    const mockResult: InitializeProjectResultDTO = {
+      created: true,
+      tasksDir: "/path/to/workspace/tasks",
+    };
+
+    // Mock the execute method of InitializeProjectUseCase
+    const executeMock = vi.fn().mockResolvedValue(mockResult);
+    vi.spyOn(InitializeProjectUseCase.prototype, "execute").mockImplementation(
+      executeMock
+    );
+
+    // Create a mock Express request and response
+    const req = {} as Request;
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+      headersSent: false,
+    } as unknown as Response;
+
+    // Create the server
+    server = new MCPServer();
+
+    // Mock the Express app post method to capture the handler
+    const postMock = vi.fn();
+    const appMock = {
+      get: vi.fn(),
+      post: postMock,
+      use: vi.fn(),
+      delete: vi.fn(),
+    };
+    vi.spyOn(
+      server as unknown as { app: typeof appMock },
+      "app",
+      "get"
+    ).mockReturnValue(appMock);
+
+    // Configure routes to capture the handler
+    server["configureRoutes"]();
+
+    // Get the handler for the /initialize endpoint
+    const handler = postMock.mock.calls.find(
+      (call) => call[0] === "/initialize"
+    )?.[1];
+    expect(handler).toBeDefined();
+
+    // Call the handler
+    await handler(req, res);
+
+    // Verify the response
+    expect(executeMock).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      status: "success",
+      data: {
+        created: mockResult.created,
+        tasksDir: mockResult.tasksDir,
+      },
+    });
+  });
+
+  it("should handle errors in the initialize project endpoint", async () => {
+    // Create a mock error
+    const mockError = new Error("Test error");
+
+    // Mock the execute method to throw an error
+    vi.spyOn(InitializeProjectUseCase.prototype, "execute").mockRejectedValue(
+      mockError
+    );
+
+    // Mock the handleError method
+    const mockErrorResponse = {
+      status: "error",
+      message: "Internal Server Error",
+    };
+    const handleErrorMock = vi.fn().mockReturnValue(mockErrorResponse);
+    vi.spyOn(MCPServer.prototype, "handleError").mockImplementation(
+      handleErrorMock
+    );
+
+    // Create a mock Express request and response
+    const req = {} as Request;
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+      headersSent: false,
+    } as unknown as Response;
+
+    // Create the server
+    server = new MCPServer();
+
+    // Mock the Express app post method to capture the handler
+    const postMock = vi.fn();
+    const appMock = {
+      get: vi.fn(),
+      post: postMock,
+      use: vi.fn(),
+      delete: vi.fn(),
+    };
+    vi.spyOn(
+      server as unknown as { app: typeof appMock },
+      "app",
+      "get"
+    ).mockReturnValue(appMock);
+
+    // Configure routes to capture the handler
+    server["configureRoutes"]();
+
+    // Get the handler for the /initialize endpoint
+    const handler = postMock.mock.calls.find(
+      (call) => call[0] === "/initialize"
+    )?.[1];
+    expect(handler).toBeDefined();
+
+    // Call the handler
+    await handler(req, res);
+
+    // Verify the response
+    expect(handleErrorMock).toHaveBeenCalledWith(mockError);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(mockErrorResponse);
   });
 });

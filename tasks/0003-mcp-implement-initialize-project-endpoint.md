@@ -1,6 +1,6 @@
 ---
 title: "MCP: Implement Initialize Project Endpoint"
-is_done: false
+is_done: true
 ---
 
 This task involves creating an MCP endpoint that allows an AI agent to initialize a new MarkTaskDown project structure programmatically. This is equivalent to the `mtd init` CLI command.

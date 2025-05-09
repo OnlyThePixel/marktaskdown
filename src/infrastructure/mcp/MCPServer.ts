@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "node:crypto";
 import { Server } from "node:http";
+import { InitializeProjectUseCase } from "../../application/useCases/commands/InitializeProjectUseCase.js";
 
 /**
  * MCPServer class that implements the Model Context Protocol server for MarkTaskDown.
@@ -51,6 +52,28 @@ export class MCPServer {
     this.app.get("/", async (req: Request, res: Response) => {
       const response = await this.getHealthStatus();
       res.status(200).json(response);
+    });
+
+    // Initialize project endpoint
+    this.app.post("/initialize", async (req: Request, res: Response) => {
+      try {
+        const initializeProjectUseCase = new InitializeProjectUseCase();
+        const result = await initializeProjectUseCase.execute();
+
+        res.status(200).json({
+          status: "success",
+          data: {
+            created: result.created,
+            tasksDir: result.tasksDir,
+          },
+        });
+      } catch (error) {
+        console.error("[MCP] Error initializing project:", error);
+        const errorResponse = this.handleError(
+          error instanceof Error ? error : new Error(String(error))
+        );
+        res.status(500).json(errorResponse);
+      }
     });
 
     // MCP endpoint for client-to-server communication
