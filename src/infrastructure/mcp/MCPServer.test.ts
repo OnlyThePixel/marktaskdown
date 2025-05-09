@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { MCPServer } from "./MCPServer.js";
 import { InitializeProjectUseCase } from "../../application/useCases/commands/InitializeProjectUseCase.js";
 import { InitializeProjectResultDTO } from "../../application/dtos/InitializeProjectResultDTO.js";
+import { CreateTaskUseCase } from "../../application/useCases/commands/CreateTaskUseCase.js";
+import { Task } from "../../domain/entities/Task.js";
 import { Request, Response } from "express";
 
 describe("MCPServer", () => {
@@ -220,6 +222,272 @@ describe("MCPServer", () => {
     // Get the handler for the /initialize endpoint
     const handler = postMock.mock.calls.find(
       (call) => call[0] === "/initialize"
+    )?.[1];
+    expect(handler).toBeDefined();
+
+    // Call the handler
+    await handler(req, res);
+
+    // Verify the response
+    expect(handleErrorMock).toHaveBeenCalledWith(mockError);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(mockErrorResponse);
+  });
+
+  it("should have a create task endpoint that returns a success response", async () => {
+    // Create a mock Task
+    const mockTask = {
+      id: "123",
+      slug: {
+        value: "123-test-task",
+      },
+      title: {
+        value: "Test Task",
+      },
+      description: {
+        value: "This is a test task",
+      },
+      isDone: false,
+    } as unknown as Task;
+
+    // Mock the execute method of CreateTaskUseCase
+    const executeMock = vi.fn().mockResolvedValue(mockTask);
+    vi.spyOn(CreateTaskUseCase.prototype, "execute").mockImplementation(
+      executeMock
+    );
+
+    // Create a mock Express request with body
+    const req = {
+      body: {
+        title: "Test Task",
+        description: "This is a test task",
+      },
+    } as Request;
+
+    // Create a mock Express response
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+      headersSent: false,
+    } as unknown as Response;
+
+    // Create the server
+    server = new MCPServer();
+
+    // Mock the Express app post method to capture the handler
+    const postMock = vi.fn();
+    const appMock = {
+      get: vi.fn(),
+      post: postMock,
+      use: vi.fn(),
+      delete: vi.fn(),
+    };
+    vi.spyOn(
+      server as unknown as { app: typeof appMock },
+      "app",
+      "get"
+    ).mockReturnValue(appMock);
+
+    // Configure routes to capture the handler
+    server["configureRoutes"]();
+
+    // Get the handler for the /tasks endpoint
+    const handler = postMock.mock.calls.find(
+      (call) => call[0] === "/tasks"
+    )?.[1];
+    expect(handler).toBeDefined();
+
+    // Call the handler
+    await handler(req, res);
+
+    // Verify the response
+    expect(executeMock).toHaveBeenCalledWith({
+      title: "Test Task",
+      description: "This is a test task",
+    });
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith({
+      status: "success",
+      data: {
+        id: mockTask.id,
+        slug: mockTask.slug.value,
+        title: mockTask.title.value,
+        description: mockTask.description.value,
+        isDone: mockTask.isDone,
+      },
+    });
+  });
+
+  it("should handle missing title in create task endpoint", async () => {
+    // Create a mock Express request with empty title
+    const req = {
+      body: {
+        description: "This is a test task",
+      },
+    } as Request;
+
+    // Create a mock Express response
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+      headersSent: false,
+    } as unknown as Response;
+
+    // Create the server
+    server = new MCPServer();
+
+    // Mock the Express app post method to capture the handler
+    const postMock = vi.fn();
+    const appMock = {
+      get: vi.fn(),
+      post: postMock,
+      use: vi.fn(),
+      delete: vi.fn(),
+    };
+    vi.spyOn(
+      server as unknown as { app: typeof appMock },
+      "app",
+      "get"
+    ).mockReturnValue(appMock);
+
+    // Configure routes to capture the handler
+    server["configureRoutes"]();
+
+    // Get the handler for the /tasks endpoint
+    const handler = postMock.mock.calls.find(
+      (call) => call[0] === "/tasks"
+    )?.[1];
+    expect(handler).toBeDefined();
+
+    // Call the handler
+    await handler(req, res);
+
+    // Verify the response
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      status: "error",
+      message: "Title is required and cannot be empty",
+    });
+  });
+
+  it("should handle validation errors in create task endpoint", async () => {
+    // Create a mock error
+    const mockError = new Error("Title must not be empty");
+
+    // Mock the execute method to throw an error
+    vi.spyOn(CreateTaskUseCase.prototype, "execute").mockRejectedValue(
+      mockError
+    );
+
+    // Create a mock Express request with body
+    const req = {
+      body: {
+        title: "Test Task",
+        description: "This is a test task",
+      },
+    } as Request;
+
+    // Create a mock Express response
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+      headersSent: false,
+    } as unknown as Response;
+
+    // Create the server
+    server = new MCPServer();
+
+    // Mock the Express app post method to capture the handler
+    const postMock = vi.fn();
+    const appMock = {
+      get: vi.fn(),
+      post: postMock,
+      use: vi.fn(),
+      delete: vi.fn(),
+    };
+    vi.spyOn(
+      server as unknown as { app: typeof appMock },
+      "app",
+      "get"
+    ).mockReturnValue(appMock);
+
+    // Configure routes to capture the handler
+    server["configureRoutes"]();
+
+    // Get the handler for the /tasks endpoint
+    const handler = postMock.mock.calls.find(
+      (call) => call[0] === "/tasks"
+    )?.[1];
+    expect(handler).toBeDefined();
+
+    // Call the handler
+    await handler(req, res);
+
+    // Verify the response
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      status: "error",
+      message: "Title must not be empty",
+    });
+  });
+
+  it("should handle server errors in create task endpoint", async () => {
+    // Create a mock error
+    const mockError = new Error("Database connection failed");
+
+    // Mock the execute method to throw an error
+    vi.spyOn(CreateTaskUseCase.prototype, "execute").mockRejectedValue(
+      mockError
+    );
+
+    // Mock the handleError method
+    const mockErrorResponse = {
+      status: "error",
+      message: "Internal Server Error",
+    };
+    const handleErrorMock = vi.fn().mockReturnValue(mockErrorResponse);
+    vi.spyOn(MCPServer.prototype, "handleError").mockImplementation(
+      handleErrorMock
+    );
+
+    // Create a mock Express request with body
+    const req = {
+      body: {
+        title: "Test Task",
+        description: "This is a test task",
+      },
+    } as Request;
+
+    // Create a mock Express response
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+      headersSent: false,
+    } as unknown as Response;
+
+    // Create the server
+    server = new MCPServer();
+
+    // Mock the Express app post method to capture the handler
+    const postMock = vi.fn();
+    const appMock = {
+      get: vi.fn(),
+      post: postMock,
+      use: vi.fn(),
+      delete: vi.fn(),
+    };
+    vi.spyOn(
+      server as unknown as { app: typeof appMock },
+      "app",
+      "get"
+    ).mockReturnValue(appMock);
+
+    // Configure routes to capture the handler
+    server["configureRoutes"]();
+
+    // Get the handler for the /tasks endpoint
+    const handler = postMock.mock.calls.find(
+      (call) => call[0] === "/tasks"
     )?.[1];
     expect(handler).toBeDefined();
 

@@ -111,4 +111,136 @@ describe("MCP Server Integration Tests", () => {
     expect(secondResponseBody.status).toBe("success");
     expect(secondResponseBody.data.created).toBe(false);
   });
+
+  it("should create a task when POST /tasks is called with valid data", async () => {
+    // Make a request to the tasks endpoint with valid data
+    const response = await fetch(`http://localhost:${testPort}/tasks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: "Test Task",
+        description: "This is a test task created via MCP",
+      }),
+    });
+
+    // Verify the response status
+    expect(response.status).toBe(201);
+
+    // Verify the response body
+    const responseBody = (await response.json()) as {
+      status: string;
+      data: {
+        id: string;
+        slug: string;
+        title: string;
+        description: string;
+        isDone: boolean;
+      };
+    };
+
+    expect(responseBody.status).toBe("success");
+    expect(responseBody.data).toBeDefined();
+    expect(typeof responseBody.data.id).toBe("string");
+    expect(typeof responseBody.data.slug).toBe("string");
+    expect(responseBody.data.title).toBe("Test Task");
+    expect(responseBody.data.description).toBe(
+      "This is a test task created via MCP"
+    );
+    expect(responseBody.data.isDone).toBe(false);
+
+    // Verify the task file was created
+    const taskFilePath = path.resolve(
+      tempDir,
+      "tasks",
+      `${responseBody.data.slug}.md`
+    );
+    expect(fs.existsSync(taskFilePath)).toBe(true);
+  });
+
+  it("should create a task when POST /tasks is called with only title", async () => {
+    // Make a request to the tasks endpoint with only title
+    const response = await fetch(`http://localhost:${testPort}/tasks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: "Task Without Description",
+      }),
+    });
+
+    // Verify the response status
+    expect(response.status).toBe(201);
+
+    // Verify the response body
+    const responseBody = (await response.json()) as {
+      status: string;
+      data: {
+        id: string;
+        slug: string;
+        title: string;
+        description: string;
+        isDone: boolean;
+      };
+    };
+
+    expect(responseBody.status).toBe("success");
+    expect(responseBody.data).toBeDefined();
+    expect(responseBody.data.title).toBe("Task Without Description");
+    expect(responseBody.data.description).toBe("");
+    expect(responseBody.data.isDone).toBe(false);
+  });
+
+  it("should return 400 when POST /tasks is called without title", async () => {
+    // Make a request to the tasks endpoint without title
+    const response = await fetch(`http://localhost:${testPort}/tasks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        description: "This task has no title",
+      }),
+    });
+
+    // Verify the response status
+    expect(response.status).toBe(400);
+
+    // Verify the response body
+    const responseBody = (await response.json()) as {
+      status: string;
+      message: string;
+    };
+
+    expect(responseBody.status).toBe("error");
+    expect(responseBody.message).toBeDefined();
+  });
+
+  it("should return 400 when POST /tasks is called with empty title", async () => {
+    // Make a request to the tasks endpoint with empty title
+    const response = await fetch(`http://localhost:${testPort}/tasks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: "",
+        description: "This task has empty title",
+      }),
+    });
+
+    // Verify the response status
+    expect(response.status).toBe(400);
+
+    // Verify the response body
+    const responseBody = (await response.json()) as {
+      status: string;
+      message: string;
+    };
+
+    expect(responseBody.status).toBe("error");
+    expect(responseBody.message).toBeDefined();
+  });
 });

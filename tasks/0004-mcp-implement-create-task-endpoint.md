@@ -1,6 +1,6 @@
 ---
 title: "MCP: Implement Create Task Endpoint"
-is_done: false
+is_done: true
 ---
 
 This task involves creating an MCP endpoint that allows an AI agent to create a new task programmatically. This is equivalent to the `mtd add` CLI command.

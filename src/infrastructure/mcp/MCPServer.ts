@@ -4,6 +4,8 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { randomUUID } from "node:crypto";
 import { Server } from "node:http";
 import { InitializeProjectUseCase } from "../../application/useCases/commands/InitializeProjectUseCase.js";
+import { CreateTaskUseCase } from "../../application/useCases/commands/CreateTaskUseCase.js";
+import { FileSystemTaskRepository } from "../repositories/FileSystemTaskRepository.js";
 
 /**
  * MCPServer class that implements the Model Context Protocol server for MarkTaskDown.
@@ -73,6 +75,63 @@ export class MCPServer {
           error instanceof Error ? error : new Error(String(error))
         );
         res.status(500).json(errorResponse);
+      }
+    });
+
+    // Create task endpoint
+    this.app.post("/tasks", async (req: Request, res: Response) => {
+      try {
+        // Validate request body
+        const { title, description = "" } = req.body;
+
+        if (!title || title.trim() === "") {
+          res.status(400).json({
+            status: "error",
+            message: "Title is required and cannot be empty",
+          });
+        } else {
+          // Create task repository
+          const taskRepository = new FileSystemTaskRepository();
+
+          // Create and execute use case
+          const createTaskUseCase = new CreateTaskUseCase(taskRepository);
+          const task = await createTaskUseCase.execute({
+            title,
+            description,
+          });
+
+          // Return success response
+          res.status(201).json({
+            status: "success",
+            data: {
+              id: task.id,
+              slug: task.slug.value,
+              title: task.title.value,
+              description: task.description.value,
+              isDone: task.isDone,
+            },
+          });
+        }
+      } catch (error) {
+        console.error("[MCP] Error creating task:", error);
+
+        // Handle validation errors with 400 status
+        if (
+          error instanceof Error &&
+          (error.message.includes("Title") ||
+            error.message.includes("Description"))
+        ) {
+          res.status(400).json({
+            status: "error",
+            message: error.message,
+          });
+        } else {
+          // Handle other errors with 500 status
+          const errorResponse = this.handleError(
+            error instanceof Error ? error : new Error(String(error))
+          );
+          res.status(500).json(errorResponse);
+        }
       }
     });
 
