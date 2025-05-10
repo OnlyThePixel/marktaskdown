@@ -83,6 +83,42 @@ describe("FileSystemTaskRepository", () => {
         expectedFrontMatter
       );
     });
+
+    it("should save a task to its original filename when it differs from the slug", async () => {
+      // Mock the readFile method to return a task with a custom filename
+      const customFilename = "custom-filename.md";
+      const customFilePath = `${testTasksDir}/${customFilename}`;
+
+      vi.mocked(mockAdapter.readFile).mockResolvedValueOnce({
+        frontMatter: {
+          title: "Test Task 1",
+          is_done: false,
+        },
+        content: "Description for task 1",
+      });
+
+      // Mock path.basename to return the custom filename
+      vi.mocked(path.basename).mockReturnValueOnce(customFilename);
+
+      // First load the task from the custom filename
+      const loadedTask = await repository.findBySlug(new Slug("custom-filename"));
+
+      // Mock the writeFile method
+      vi.mocked(mockAdapter.writeFile).mockResolvedValueOnce();
+
+      // Act - save the loaded task
+      await repository.save(loadedTask!);
+
+      // Assert - should save to the original filename, not the slug-based one
+      expect(mockAdapter.writeFile).toHaveBeenCalledWith(
+        customFilePath,
+        loadedTask!.description.value,
+        expect.objectContaining({
+          title: loadedTask!.title.value,
+          is_done: loadedTask!.isDone,
+        })
+      );
+    });
   });
 
   describe("findBySlug", () => {

@@ -13,6 +13,12 @@ interface TaskFrontMatter {
 }
 
 /**
+ * Maps task slugs to their original filenames
+ * Used to ensure tasks are saved to their original files
+ */
+type TaskFilenameMap = Map<string, string>;
+
+/**
  * FileSystemTaskRepository
  * Implements TaskRepository interface using the file system
  * Uses MarkdownFileAdapter for file operations
@@ -20,6 +26,7 @@ interface TaskFrontMatter {
 export class FileSystemTaskRepository implements TaskRepository {
   private readonly tasksDir: string;
   private readonly fileAdapter: MarkdownFileAdapter;
+  private readonly taskFilenames: TaskFilenameMap;
 
   /**
    * Creates a new FileSystemTaskRepository
@@ -31,6 +38,7 @@ export class FileSystemTaskRepository implements TaskRepository {
   constructor(tasksDir?: string, fileAdapter?: MarkdownFileAdapter) {
     this.tasksDir = tasksDir || path.join(process.cwd(), "tasks");
     this.fileAdapter = fileAdapter || new MarkdownFileAdapter();
+    this.taskFilenames = new Map();
   }
 
   /**
@@ -40,7 +48,14 @@ export class FileSystemTaskRepository implements TaskRepository {
    * @param task - The task to save
    */
   async save(task: Task): Promise<void> {
-    const filename = `${task.slug.value}.md`;
+    // Check if we have an original filename for this task
+    let filename = this.taskFilenames.get(task.slug.value);
+
+    // If not, use the slug-based filename
+    if (!filename) {
+      filename = `${task.slug.value}.md`;
+    }
+
     const filePath = path.join(this.tasksDir, filename);
 
     // Create front matter
@@ -88,6 +103,9 @@ export class FileSystemTaskRepository implements TaskRepository {
         id
       );
 
+      // Store the original filename for this task
+      this.taskFilenames.set(task.slug.value, filename);
+
       return task;
     } catch (error) {
       console.error(`Error reading task file: ${filename}`, error);
@@ -132,6 +150,9 @@ export class FileSystemTaskRepository implements TaskRepository {
           id
         );
 
+        // Store the original filename for this task
+        this.taskFilenames.set(task.slug.value, filename);
+
         tasks.push(task);
       } catch (err) {
         console.warn(
@@ -150,10 +171,20 @@ export class FileSystemTaskRepository implements TaskRepository {
    * @param slug - The slug of the task to delete
    */
   async delete(slug: Slug): Promise<void> {
-    const filename = `${slug.value}.md`;
+    // Check if we have an original filename for this task
+    let filename = this.taskFilenames.get(slug.value);
+
+    // If not, use the slug-based filename
+    if (!filename) {
+      filename = `${slug.value}.md`;
+    }
+
     const filePath = path.join(this.tasksDir, filename);
 
     // Delete file using the adapter
     await this.fileAdapter.deleteFile(filePath);
+
+    // Remove the filename mapping
+    this.taskFilenames.delete(slug.value);
   }
 }

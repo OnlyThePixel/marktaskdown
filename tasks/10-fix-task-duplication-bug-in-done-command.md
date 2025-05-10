@@ -1,6 +1,6 @@
 ---
 title: Fix task duplication bug in 'done' command
-is_done: false
+is_done: true
 ---
 
 When marking a task as done, if the task filename differs from its title-based slug, the system creates a duplicate file instead of updating the original file. This happens because the 'done' command generates a new slug based on the title, which may differ from the original file's slug.
