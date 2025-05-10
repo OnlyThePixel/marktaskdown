@@ -1,2 +1,15 @@
 echo "Running pre-commit hooks..."
-npm run lint && npm run test && npm run build
+
+# Get list of staged files
+STAGED_FILES=$(git diff --name-only --cached)
+
+# Format files and stage only the previously staged files that were modified
+npm run lint:fix
+
+# Re-stage only the files that were previously staged
+if [ -n "$STAGED_FILES" ]; then
+  echo "$STAGED_FILES" | xargs git add
+fi
+
+# Run tests and build
+npm run test && npm run build
