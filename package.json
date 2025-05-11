@@ -42,6 +42,7 @@
     "prepare": "husky",
     "mcp": "node dist/index.js",
     "release": "semantic-release",
+    "release:dry-run": "node scripts/test-release-config.js",
     "prepublishOnly": "npm run build"
   },
   "engines": {
