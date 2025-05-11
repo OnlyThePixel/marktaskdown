@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { MarkTaskDownMcpServer } from "./server.js";
 import { InitializeProjectUseCase } from "../../application/useCases/commands/InitializeProjectUseCase.js";
 import { CreateTaskUseCase } from "../../application/useCases/commands/CreateTaskUseCase.js";
+import { SetTaskAsDoneUseCase } from "../../application/useCases/commands/SetTaskAsDoneUseCase.js";
+import { SetTaskAsUndoneUseCase } from "../../application/useCases/commands/SetTaskAsUndoneUseCase.js";
 import { FileSystemTaskRepository } from "../../infrastructure/repositories/FileSystemTaskRepository.js";
 
 // Create mock functions
@@ -28,6 +30,8 @@ vi.mock("@modelcontextprotocol/sdk/server/stdio.js", () => ({
 // Mock the use cases
 vi.mock("../../application/useCases/commands/InitializeProjectUseCase.js");
 vi.mock("../../application/useCases/commands/CreateTaskUseCase.js");
+vi.mock("../../application/useCases/commands/SetTaskAsDoneUseCase.js");
+vi.mock("../../application/useCases/commands/SetTaskAsUndoneUseCase.js");
 
 // Mock the repositories
 vi.mock("../../infrastructure/repositories/FileSystemTaskRepository.js");
@@ -359,6 +363,214 @@ describe("MarkTaskDownMcpServer", () => {
             {
               type: "text",
               text: "Error creating task: Task creation failed",
+            },
+          ],
+          isError: true,
+        });
+      });
+    });
+
+    describe("set-task-done tool", () => {
+      it("should register the set-task-done tool", () => {
+        // Verify that the tool method was called with the correct name
+        expect(mockTool).toHaveBeenCalledWith(
+          "set-task-done",
+          expect.any(Object),
+          expect.any(Function)
+        );
+      });
+
+      it("should handle successful task marking as done", async () => {
+        // Create mock task
+        const mockTask = {
+          title: { value: "Test Task" },
+          description: { value: "Test Description" },
+          slug: { value: "1-test-task" },
+          isDone: true,
+        };
+
+        // Setup mock implementation for SetTaskAsDoneUseCase
+        const mockExecute = vi.fn().mockResolvedValue(mockTask);
+
+        // Mock the FileSystemTaskRepository constructor
+        vi.mocked(FileSystemTaskRepository).mockImplementation(
+          () => ({}) as unknown as FileSystemTaskRepository
+        );
+
+        // Mock the SetTaskAsDoneUseCase
+        vi.mocked(SetTaskAsDoneUseCase).mockImplementation(
+          () =>
+            ({
+              execute: mockExecute,
+            }) as unknown as SetTaskAsDoneUseCase
+        );
+
+        // Extract the handler function from the tool registration
+        const toolCall = mockTool.mock.calls.find(
+          (call) => call[0] === "set-task-done"
+        );
+
+        // Ensure the tool was registered
+        expect(toolCall).toBeDefined();
+        const toolHandler = toolCall![2];
+
+        // Call the handler with parameters
+        const result = await toolHandler({
+          slug: "1-test-task",
+        });
+
+        // Verify the result
+        expect(result).toEqual({
+          content: [
+            {
+              type: "text",
+              text: "Task marked as done: Test Task (1-test-task)",
+            },
+          ],
+        });
+
+        // Verify the use case was called with the correct parameters
+        expect(mockExecute).toHaveBeenCalledWith(expect.any(Object));
+      });
+
+      it("should handle errors during task marking as done", async () => {
+        // Setup mock implementation for SetTaskAsDoneUseCase to throw an error
+        const mockExecute = vi
+          .fn()
+          .mockRejectedValue(new Error("Task not found"));
+
+        // Mock the SetTaskAsDoneUseCase
+        vi.mocked(SetTaskAsDoneUseCase).mockImplementation(
+          () =>
+            ({
+              execute: mockExecute,
+            }) as unknown as SetTaskAsDoneUseCase
+        );
+
+        // Extract the handler function from the tool registration
+        const toolCall = mockTool.mock.calls.find(
+          (call) => call[0] === "set-task-done"
+        );
+
+        // Ensure the tool was registered
+        expect(toolCall).toBeDefined();
+        const toolHandler = toolCall![2];
+
+        // Call the handler
+        const result = await toolHandler({
+          slug: "non-existent-task",
+        });
+
+        // Verify the result
+        expect(result).toEqual({
+          content: [
+            {
+              type: "text",
+              text: "Error marking task as done: Task not found",
+            },
+          ],
+          isError: true,
+        });
+      });
+    });
+
+    describe("set-task-undone tool", () => {
+      it("should register the set-task-undone tool", () => {
+        // Verify that the tool method was called with the correct name
+        expect(mockTool).toHaveBeenCalledWith(
+          "set-task-undone",
+          expect.any(Object),
+          expect.any(Function)
+        );
+      });
+
+      it("should handle successful task marking as undone", async () => {
+        // Create mock task
+        const mockTask = {
+          title: { value: "Test Task" },
+          description: { value: "Test Description" },
+          slug: { value: "1-test-task" },
+          isDone: false,
+        };
+
+        // Setup mock implementation for SetTaskAsUndoneUseCase
+        const mockExecute = vi.fn().mockResolvedValue(mockTask);
+
+        // Mock the FileSystemTaskRepository constructor
+        vi.mocked(FileSystemTaskRepository).mockImplementation(
+          () => ({}) as unknown as FileSystemTaskRepository
+        );
+
+        // Mock the SetTaskAsUndoneUseCase
+        vi.mocked(SetTaskAsUndoneUseCase).mockImplementation(
+          () =>
+            ({
+              execute: mockExecute,
+            }) as unknown as SetTaskAsUndoneUseCase
+        );
+
+        // Extract the handler function from the tool registration
+        const toolCall = mockTool.mock.calls.find(
+          (call) => call[0] === "set-task-undone"
+        );
+
+        // Ensure the tool was registered
+        expect(toolCall).toBeDefined();
+        const toolHandler = toolCall![2];
+
+        // Call the handler with parameters
+        const result = await toolHandler({
+          slug: "1-test-task",
+        });
+
+        // Verify the result
+        expect(result).toEqual({
+          content: [
+            {
+              type: "text",
+              text: "Task marked as undone: Test Task (1-test-task)",
+            },
+          ],
+        });
+
+        // Verify the use case was called with the correct parameters
+        expect(mockExecute).toHaveBeenCalledWith(expect.any(Object));
+      });
+
+      it("should handle errors during task marking as undone", async () => {
+        // Setup mock implementation for SetTaskAsUndoneUseCase to throw an error
+        const mockExecute = vi
+          .fn()
+          .mockRejectedValue(new Error("Task not found"));
+
+        // Mock the SetTaskAsUndoneUseCase
+        vi.mocked(SetTaskAsUndoneUseCase).mockImplementation(
+          () =>
+            ({
+              execute: mockExecute,
+            }) as unknown as SetTaskAsUndoneUseCase
+        );
+
+        // Extract the handler function from the tool registration
+        const toolCall = mockTool.mock.calls.find(
+          (call) => call[0] === "set-task-undone"
+        );
+
+        // Ensure the tool was registered
+        expect(toolCall).toBeDefined();
+        const toolHandler = toolCall![2];
+
+        // Call the handler
+        const result = await toolHandler({
+          slug: "non-existent-task",
+        });
+
+        // Verify the result
+        expect(result).toEqual({
+          content: [
+            {
+              type: "text",
+              text: "Error marking task as undone: Task not found",
             },
           ],
           isError: true,

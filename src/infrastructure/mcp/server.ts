@@ -3,7 +3,10 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { InitializeProjectUseCase } from "../../application/useCases/commands/InitializeProjectUseCase.js";
 import { CreateTaskUseCase } from "../../application/useCases/commands/CreateTaskUseCase.js";
+import { SetTaskAsDoneUseCase } from "../../application/useCases/commands/SetTaskAsDoneUseCase.js";
+import { SetTaskAsUndoneUseCase } from "../../application/useCases/commands/SetTaskAsUndoneUseCase.js";
 import { FileSystemTaskRepository } from "../../infrastructure/repositories/FileSystemTaskRepository.js";
+import { Slug } from "../../domain/valueObjects/Slug.js";
 
 /**
  * MarkTaskDown MCP Server
@@ -114,6 +117,102 @@ export class MarkTaskDownMcpServer {
               {
                 type: "text",
                 text: `Error creating task: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
+    // Register the set-task-done tool
+    this.mcpServer.tool(
+      "set-task-done",
+      {
+        // Define parameters schema using zod
+        slug: z.string().min(1, "Slug is required"),
+      },
+      async (params) => {
+        try {
+          // Create repository and use case
+          const taskRepository = new FileSystemTaskRepository();
+          const useCase = new SetTaskAsDoneUseCase(taskRepository);
+
+          // Create a Slug value object from the string parameter
+          const slug = new Slug(params.slug);
+
+          // Execute the use case with the provided slug
+          const task = await useCase.execute(slug);
+
+          // Format the response
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Task marked as done: ${task.title.value} (${task.slug.value})`,
+              },
+            ],
+          };
+        } catch (error) {
+          // Handle errors
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Unknown error marking task as done";
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error marking task as done: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
+    // Register the set-task-undone tool
+    this.mcpServer.tool(
+      "set-task-undone",
+      {
+        // Define parameters schema using zod
+        slug: z.string().min(1, "Slug is required"),
+      },
+      async (params) => {
+        try {
+          // Create repository and use case
+          const taskRepository = new FileSystemTaskRepository();
+          const useCase = new SetTaskAsUndoneUseCase(taskRepository);
+
+          // Create a Slug value object from the string parameter
+          const slug = new Slug(params.slug);
+
+          // Execute the use case with the provided slug
+          const task = await useCase.execute(slug);
+
+          // Format the response
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Task marked as undone: ${task.title.value} (${task.slug.value})`,
+              },
+            ],
+          };
+        } catch (error) {
+          // Handle errors
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Unknown error marking task as undone";
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error marking task as undone: ${errorMessage}`,
               },
             ],
             isError: true,

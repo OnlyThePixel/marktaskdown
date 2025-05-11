@@ -1,6 +1,6 @@
 ---
 title: "MCP: Implement task status management tools"
-is_done: false
+is_done: true
 ---
 
 # MCP: Implement task status management tools
