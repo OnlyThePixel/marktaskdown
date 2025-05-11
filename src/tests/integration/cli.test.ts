@@ -23,7 +23,7 @@ describe("CLI Integration Tests", () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), "mtd-integration-tests-")
   );
-  const cliPath = path.resolve(process.cwd(), "dist/index.js");
+  const cliPath = path.resolve(process.cwd(), "dist/ui/cli/index.js");
 
   // Store the original working directory
   const originalCwd = process.cwd();

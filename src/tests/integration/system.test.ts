@@ -14,7 +14,7 @@ import { spawn } from "child_process";
 describe("System Integration Tests", () => {
   // Create a temporary directory for testing
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "mtd-system-tests-"));
-  const cliPath = path.resolve(process.cwd(), "dist/index.js");
+  const cliPath = path.resolve(process.cwd(), "dist/ui/cli/index.js");
 
   // Store the original working directory
   const originalCwd = process.cwd();

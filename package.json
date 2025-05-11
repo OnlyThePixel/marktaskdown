@@ -3,11 +3,36 @@
   "version": "0.0.0",
   "description": "A lightweight CLI for task management based on Markdown files",
   "license": "MIT",
-  "author": "",
+  "author": "MarkTaskDown Team",
   "type": "module",
+  "main": "./dist/ui/cli/index.js",
+  "types": "./dist/ui/cli/index.d.ts",
   "bin": {
-    "mtd": "./dist/index.js"
+    "mtd": "./dist/ui/cli/index.js"
   },
+  "files": [
+    "dist",
+    "!dist/**/*.test.*",
+    "!dist/**/*.map",
+    "!dist/tests"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/onlythepixel/marktaskdown.git"
+  },
+  "homepage": "https://github.com/onlythepixel/marktaskdown#readme",
+  "bugs": {
+    "url": "https://github.com/onlythepixel/marktaskdown/issues"
+  },
+  "keywords": [
+    "cli",
+    "task-management",
+    "markdown",
+    "productivity",
+    "todo",
+    "mcp",
+    "model-context-protocol"
+  ],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
@@ -16,7 +41,8 @@
     "lint:fix": "eslint . --fix && prettier --write .",
     "prepare": "husky",
     "mcp": "node dist/index.js",
-    "release": "semantic-release"
+    "release": "semantic-release",
+    "prepublishOnly": "npm run build"
   },
   "engines": {
     "node": ">=22.0.0"
