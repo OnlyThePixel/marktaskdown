@@ -7,6 +7,7 @@ import { SetTaskAsUndoneUseCase } from "../../application/useCases/commands/SetT
 import { DeleteTaskUseCase } from "../../application/useCases/commands/DeleteTaskUseCase.js";
 import { FileSystemTaskRepository } from "../../infrastructure/repositories/FileSystemTaskRepository.js";
 import { GetAllTasksUseCase } from "../../application/useCases/queries/GetAllTasksUseCase.js";
+import { GetTaskBySlugUseCase } from "../../application/useCases/queries/GetTaskBySlugUseCase.js";
 
 // Create mock functions
 const mockConnect = vi.fn().mockResolvedValue(undefined);
@@ -23,6 +24,9 @@ vi.mock("@modelcontextprotocol/sdk/server/mcp.js", () => ({
     tool: mockTool,
     resource: mockResource,
   })),
+  ResourceTemplate: vi.fn().mockImplementation((template) => ({
+    template,
+  })),
 }));
 
 vi.mock("@modelcontextprotocol/sdk/server/stdio.js", () => ({
@@ -38,6 +42,7 @@ vi.mock("../../application/useCases/commands/SetTaskAsDoneUseCase.js");
 vi.mock("../../application/useCases/commands/SetTaskAsUndoneUseCase.js");
 vi.mock("../../application/useCases/commands/DeleteTaskUseCase.js");
 vi.mock("../../application/useCases/queries/GetAllTasksUseCase.js");
+vi.mock("../../application/useCases/queries/GetTaskBySlugUseCase.js");
 
 // Mock the repositories
 vi.mock("../../infrastructure/repositories/FileSystemTaskRepository.js");
@@ -835,6 +840,152 @@ describe("MarkTaskDownMcpServer", () => {
             {
               uri: "tasks://list",
               text: "Error listing tasks: Failed to retrieve tasks",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("task detail resource", () => {
+      it("should register the task detail resource", () => {
+        // Verify that the resource method was called with the correct name
+        expect(mockResource).toHaveBeenCalledWith(
+          "task",
+          expect.any(Object), // ResourceTemplate
+          expect.any(Function)
+        );
+      });
+
+      it("should handle successful task detail retrieval", async () => {
+        // Create mock task
+        const mockTask = {
+          title: { value: "Test Task" },
+          description: { value: "Test Description" },
+          slug: { value: "1-test-task" },
+          isDone: false,
+        };
+
+        // Setup mock implementation for GetTaskBySlugUseCase
+        const mockExecute = vi.fn().mockResolvedValue(mockTask);
+
+        // Mock the FileSystemTaskRepository constructor
+        vi.mocked(FileSystemTaskRepository).mockImplementation(
+          () => ({}) as unknown as FileSystemTaskRepository
+        );
+
+        // Mock the GetTaskBySlugUseCase
+        vi.mocked(GetTaskBySlugUseCase).mockImplementation(
+          () =>
+            ({
+              execute: mockExecute,
+            }) as unknown as GetTaskBySlugUseCase
+        );
+
+        // Extract the handler function from the resource registration
+        const resourceCall = mockResource.mock.calls.find(
+          (call) => call[0] === "task"
+        );
+
+        // Ensure the resource was registered
+        expect(resourceCall).toBeDefined();
+        const resourceHandler = resourceCall![2];
+
+        // Create a mock URI and params
+        const mockUri = new URL("tasks://1-test-task");
+        const mockParams = { slug: "1-test-task" };
+
+        // Call the handler
+        const result = await resourceHandler(mockUri, mockParams);
+
+        // Verify the result
+        expect(result).toEqual({
+          contents: [
+            {
+              uri: "tasks://1-test-task",
+              text: "# Test Task\n\nStatus: Not Done\nSlug: 1-test-task\n\nTest Description",
+            },
+          ],
+        });
+
+        // Verify the use case was called with the correct slug
+        expect(mockExecute).toHaveBeenCalledWith(expect.any(Object));
+      });
+
+      it("should handle task not found", async () => {
+        // Setup mock implementation for GetTaskBySlugUseCase to return null
+        const mockExecute = vi.fn().mockResolvedValue(null);
+
+        // Mock the GetTaskBySlugUseCase
+        vi.mocked(GetTaskBySlugUseCase).mockImplementation(
+          () =>
+            ({
+              execute: mockExecute,
+            }) as unknown as GetTaskBySlugUseCase
+        );
+
+        // Extract the handler function from the resource registration
+        const resourceCall = mockResource.mock.calls.find(
+          (call) => call[0] === "task"
+        );
+
+        // Ensure the resource was registered
+        expect(resourceCall).toBeDefined();
+        const resourceHandler = resourceCall![2];
+
+        // Create a mock URI and params
+        const mockUri = new URL("tasks://non-existent-task");
+        const mockParams = { slug: "non-existent-task" };
+
+        // Call the handler
+        const result = await resourceHandler(mockUri, mockParams);
+
+        // Verify the result
+        expect(result).toEqual({
+          contents: [
+            {
+              uri: "tasks://non-existent-task",
+              text: "Error retrieving task: Task with slug 'non-existent-task' not found",
+            },
+          ],
+        });
+      });
+
+      it("should handle errors during task detail retrieval", async () => {
+        // Setup mock implementation for GetTaskBySlugUseCase to throw an error
+        const mockExecute = vi
+          .fn()
+          .mockRejectedValue(new Error("Failed to retrieve task"));
+
+        // Mock the GetTaskBySlugUseCase
+        vi.mocked(GetTaskBySlugUseCase).mockImplementation(
+          () =>
+            ({
+              execute: mockExecute,
+            }) as unknown as GetTaskBySlugUseCase
+        );
+
+        // Extract the handler function from the resource registration
+        const resourceCall = mockResource.mock.calls.find(
+          (call) => call[0] === "task"
+        );
+
+        // Ensure the resource was registered
+        expect(resourceCall).toBeDefined();
+        const resourceHandler = resourceCall![2];
+
+        // Create a mock URI and params
+        const mockUri = new URL("tasks://1-test-task");
+        const mockParams = { slug: "1-test-task" };
+
+        // Call the handler
+        const result = await resourceHandler(mockUri, mockParams);
+
+        // Verify the result
+        expect(result).toEqual({
+          contents: [
+            {
+              uri: "tasks://1-test-task",
+              text: "Error retrieving task: Failed to retrieve task",
             },
           ],
         });

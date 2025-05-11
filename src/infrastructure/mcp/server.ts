@@ -1,7 +1,11 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import {
+  McpServer,
+  ResourceTemplate,
+} from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { GetAllTasksUseCase } from "../../application/useCases/queries/GetAllTasksUseCase.js";
+import { GetTaskBySlugUseCase } from "../../application/useCases/queries/GetTaskBySlugUseCase.js";
 import { InitializeProjectUseCase } from "../../application/useCases/commands/InitializeProjectUseCase.js";
 import { CreateTaskUseCase } from "../../application/useCases/commands/CreateTaskUseCase.js";
 import { SetTaskAsDoneUseCase } from "../../application/useCases/commands/SetTaskAsDoneUseCase.js";
@@ -329,6 +333,66 @@ export class MarkTaskDownMcpServer {
         };
       }
     });
+
+    // Register the task detail resource with parameterized URI
+    this.mcpServer.resource(
+      "task",
+      new ResourceTemplate("tasks://{slug}", { list: undefined }),
+      async (uri, params) => {
+        try {
+          // Extract the slug parameter from the URI
+          const slugParam = params.slug as string;
+
+          if (!slugParam) {
+            throw new Error("Slug parameter is required");
+          }
+
+          // Create a Slug value object from the string parameter
+          const slug = new Slug(slugParam);
+
+          // Create repository and use case
+          const taskRepository = new FileSystemTaskRepository();
+          const useCase = new GetTaskBySlugUseCase(taskRepository);
+
+          // Execute the use case with the slug
+          const task = await useCase.execute(slug);
+
+          if (!task) {
+            throw new Error(`Task with slug '${slugParam}' not found`);
+          }
+
+          // Format the task details as markdown
+          const statusText = task.isDone ? "Done" : "Not Done";
+          const formattedTask = `# ${task.title.value}\n\nStatus: ${statusText}\nSlug: ${task.slug.value}\n\n${task.description.value}`;
+
+          // Return the formatted task details
+          return {
+            contents: [
+              {
+                uri: uri.href,
+                text: formattedTask,
+              },
+            ],
+          };
+        } catch (error) {
+          // Handle errors
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Unknown error retrieving task";
+
+          // Return error response
+          return {
+            contents: [
+              {
+                uri: uri.href,
+                text: `Error retrieving task: ${errorMessage}`,
+              },
+            ],
+          };
+        }
+      }
+    );
   }
 
   /**

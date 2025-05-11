@@ -1,6 +1,6 @@
 ---
 title: "MCP: Implement task detail resource"
-is_done: false
+is_done: true
 ---
 
 # MCP: Implement task detail resource
