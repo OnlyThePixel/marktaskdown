@@ -12,7 +12,7 @@ const __dirname = dirname(__filename);
  * @param {Object} context The semantic-release context
  * @returns {Promise<string|null>} The semantic version bump type or null if no release should be done
  */
-export default async function analyzeCommits(pluginConfig, context) {
+export async function analyzeCommits(pluginConfig, context) {
   const { logger, commits } = context;
 
   // Load gitmojis from the project's gitmojis.json file
@@ -81,3 +81,7 @@ export default async function analyzeCommits(pluginConfig, context) {
   logger.log("Analysis result: %s", releaseType || "no release");
   return releaseType;
 }
+
+export default {
+  analyzeCommits,
+};

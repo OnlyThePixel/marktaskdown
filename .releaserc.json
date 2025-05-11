@@ -1,8 +1,8 @@
 {
   "branches": ["main"],
   "plugins": [
-    ["./.semantic-release/commit-analyzer.js"],
-    ["./.semantic-release/release-notes-generator.js"],
+    "./.semantic-release/commit-analyzer.js",
+    "./.semantic-release/release-notes-generator.js",
     [
       "@semantic-release/changelog",
       {
