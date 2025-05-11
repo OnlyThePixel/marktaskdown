@@ -1,6 +1,6 @@
 ---
 title: "MCP: Add MCP server command to CLI"
-is_done: false
+is_done: true
 ---
 
 # MCP: Add MCP server command to CLI

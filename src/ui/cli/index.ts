@@ -4,6 +4,7 @@ import { addCommand } from "./commands/add.js";
 import { listCommand } from "./commands/list.js";
 import { doneCommand } from "./commands/done.js";
 import { deleteCommand } from "./commands/delete.js";
+import { mcpServerCommand } from "./commands/mcp-server.js";
 
 const program = new Command();
 
@@ -62,5 +63,12 @@ program
   .command("delete")
   .description("Delete tasks by moving them to archive")
   .action(deleteCommand);
+
+program
+  .command("mcp-server")
+  .description("Start the MarkTaskDown MCP server with STDIO transport")
+  .action(async () => {
+    await mcpServerCommand();
+  });
 
 program.parse();

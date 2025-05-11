@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "lint": "eslint . && prettier --check .",
     "lint:fix": "eslint . --fix && prettier --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "mcp": "node dist/index.js"
   },
   "engines": {
     "node": ">=22.0.0"

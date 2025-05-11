@@ -1,6 +1,6 @@
 ---
 title: "MCP: Create standalone entry point"
-is_done: false
+is_done: true
 ---
 
 # MCP: Create standalone entry point
