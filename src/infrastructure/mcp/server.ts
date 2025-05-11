@@ -87,8 +87,17 @@ export class MarkTaskDownMcpServer {
       "create-task",
       {
         // Define parameters schema using zod
-        title: z.string().min(1, "Title is required"),
-        description: z.string().optional().default(""),
+        title: z
+          .string({
+            description: "The title of the task",
+          })
+          .min(1, "Title is required"),
+        description: z
+          .string({
+            description: "The description of the task",
+          })
+          .optional()
+          .default(""),
       },
       async (params) => {
         try {
@@ -136,7 +145,11 @@ export class MarkTaskDownMcpServer {
       "set-task-done",
       {
         // Define parameters schema using zod
-        slug: z.string().min(1, "Slug is required"),
+        slug: z
+          .string({
+            description: "The slug of the task to set as done",
+          })
+          .min(1, "Slug is required"),
       },
       async (params) => {
         try {
@@ -184,7 +197,11 @@ export class MarkTaskDownMcpServer {
       "set-task-undone",
       {
         // Define parameters schema using zod
-        slug: z.string().min(1, "Slug is required"),
+        slug: z
+          .string({
+            description: "The slug of the task to set as undone",
+          })
+          .min(1, "Slug is required"),
       },
       async (params) => {
         try {
@@ -232,7 +249,11 @@ export class MarkTaskDownMcpServer {
       "delete-task",
       {
         // Define parameters schema using zod
-        slug: z.string().min(1, "Slug is required"),
+        slug: z
+          .string({
+            description: "The slug of the task to delete",
+          })
+          .min(1, "Slug is required"),
       },
       async (params) => {
         try {
@@ -278,8 +299,6 @@ export class MarkTaskDownMcpServer {
 
   /**
    * Registers all resources with the MCP server
-   *
-   * Resources will be implemented in subsequent tasks
    */
   private registerResources(): void {
     // Register the tasks list resource
