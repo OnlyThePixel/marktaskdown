@@ -1,6 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
 import { InitializeProjectUseCase } from "../../application/useCases/commands/InitializeProjectUseCase.js";
+import { CreateTaskUseCase } from "../../application/useCases/commands/CreateTaskUseCase.js";
+import { FileSystemTaskRepository } from "../../infrastructure/repositories/FileSystemTaskRepository.js";
 
 /**
  * MarkTaskDown MCP Server
@@ -62,6 +65,55 @@ export class MarkTaskDownMcpServer {
               {
                 type: "text",
                 text: `Error initializing project: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
+    // Register the create-task tool
+    this.mcpServer.tool(
+      "create-task",
+      {
+        // Define parameters schema using zod
+        title: z.string().min(1, "Title is required"),
+        description: z.string().optional().default(""),
+      },
+      async (params) => {
+        try {
+          // Create repository and use case
+          const taskRepository = new FileSystemTaskRepository();
+          const useCase = new CreateTaskUseCase(taskRepository);
+
+          // Execute the use case with the provided parameters
+          const task = await useCase.execute({
+            title: params.title,
+            description: params.description || "",
+          });
+
+          // Format the response
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Task created: ${task.title.value} (${task.slug.value})`,
+              },
+            ],
+          };
+        } catch (error) {
+          // Handle errors
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Unknown error creating task";
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error creating task: ${errorMessage}`,
               },
             ],
             isError: true,

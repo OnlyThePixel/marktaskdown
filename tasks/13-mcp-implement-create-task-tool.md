@@ -1,6 +1,6 @@
 ---
 title: "MCP: Implement create-task tool"
-is_done: false
+is_done: true
 ---
 
 # MCP: Implement create-task tool
