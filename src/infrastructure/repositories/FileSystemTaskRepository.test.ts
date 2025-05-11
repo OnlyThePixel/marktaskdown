@@ -101,7 +101,9 @@ describe("FileSystemTaskRepository", () => {
       vi.mocked(path.basename).mockReturnValueOnce(customFilename);
 
       // First load the task from the custom filename
-      const loadedTask = await repository.findBySlug(new Slug("custom-filename"));
+      const loadedTask = await repository.findBySlug(
+        new Slug("custom-filename")
+      );
 
       // Mock the writeFile method
       vi.mocked(mockAdapter.writeFile).mockResolvedValueOnce();
