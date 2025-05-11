@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { GetAllTasksUseCase } from "../../application/useCases/queries/GetAllTasksUseCase.js";
 import { InitializeProjectUseCase } from "../../application/useCases/commands/InitializeProjectUseCase.js";
 import { CreateTaskUseCase } from "../../application/useCases/commands/CreateTaskUseCase.js";
 import { SetTaskAsDoneUseCase } from "../../application/useCases/commands/SetTaskAsDoneUseCase.js";
@@ -277,7 +278,57 @@ export class MarkTaskDownMcpServer {
    * Resources will be implemented in subsequent tasks
    */
   private registerResources(): void {
-    // Resource registrations will be implemented in subsequent tasks
+    // Register the tasks list resource
+    this.mcpServer.resource("tasks", "tasks://list", async (uri) => {
+      try {
+        // Create repository and use case
+        const taskRepository = new FileSystemTaskRepository();
+        const useCase = new GetAllTasksUseCase(taskRepository);
+
+        // Execute the use case to get all tasks
+        const tasks = await useCase.execute();
+
+        // Format the tasks as a markdown list
+        let formattedTasks: string;
+
+        if (tasks.length === 0) {
+          formattedTasks = "No tasks found.";
+        } else {
+          formattedTasks = tasks
+            .map((task) => {
+              const statusMark = task.isDone ? "x" : " ";
+              return `- [${statusMark}] ${task.title.value} (${task.slug.value})`;
+            })
+            .join("\n");
+        }
+
+        // Return the formatted task list
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: formattedTasks,
+            },
+          ],
+        };
+      } catch (error) {
+        // Handle errors
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Unknown error listing tasks";
+
+        // Return error response
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: `Error listing tasks: ${errorMessage}`,
+            },
+          ],
+        };
+      }
+    });
   }
 
   /**

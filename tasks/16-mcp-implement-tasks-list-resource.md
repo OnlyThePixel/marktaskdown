@@ -1,6 +1,6 @@
 ---
 title: "MCP: Implement tasks list resource"
-is_done: false
+is_done: true
 ---
 
 # MCP: Implement tasks list resource

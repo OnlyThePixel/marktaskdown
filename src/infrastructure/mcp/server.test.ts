@@ -6,12 +6,14 @@ import { SetTaskAsDoneUseCase } from "../../application/useCases/commands/SetTas
 import { SetTaskAsUndoneUseCase } from "../../application/useCases/commands/SetTaskAsUndoneUseCase.js";
 import { DeleteTaskUseCase } from "../../application/useCases/commands/DeleteTaskUseCase.js";
 import { FileSystemTaskRepository } from "../../infrastructure/repositories/FileSystemTaskRepository.js";
+import { GetAllTasksUseCase } from "../../application/useCases/queries/GetAllTasksUseCase.js";
 
 // Create mock functions
 const mockConnect = vi.fn().mockResolvedValue(undefined);
 const mockClose = vi.fn();
 const mockTransportClose = vi.fn();
 const mockTool = vi.fn();
+const mockResource = vi.fn();
 
 // Mock the modules
 vi.mock("@modelcontextprotocol/sdk/server/mcp.js", () => ({
@@ -19,6 +21,7 @@ vi.mock("@modelcontextprotocol/sdk/server/mcp.js", () => ({
     connect: mockConnect,
     close: mockClose,
     tool: mockTool,
+    resource: mockResource,
   })),
 }));
 
@@ -34,6 +37,7 @@ vi.mock("../../application/useCases/commands/CreateTaskUseCase.js");
 vi.mock("../../application/useCases/commands/SetTaskAsDoneUseCase.js");
 vi.mock("../../application/useCases/commands/SetTaskAsUndoneUseCase.js");
 vi.mock("../../application/useCases/commands/DeleteTaskUseCase.js");
+vi.mock("../../application/useCases/queries/GetAllTasksUseCase.js");
 
 // Mock the repositories
 vi.mock("../../infrastructure/repositories/FileSystemTaskRepository.js");
@@ -680,6 +684,159 @@ describe("MarkTaskDownMcpServer", () => {
             },
           ],
           isError: true,
+        });
+      });
+    });
+  });
+
+  describe("registerResources", () => {
+    describe("tasks list resource", () => {
+      it("should register the tasks list resource", () => {
+        // Verify that the resource method was called with the correct name
+        expect(mockResource).toHaveBeenCalledWith(
+          "tasks",
+          expect.any(String),
+          expect.any(Function)
+        );
+      });
+
+      it("should handle successful tasks list retrieval", async () => {
+        // Create mock tasks
+        const mockTasks = [
+          {
+            title: { value: "Task 1" },
+            description: { value: "Description 1" },
+            slug: { value: "1-task-1" },
+            isDone: false,
+          },
+          {
+            title: { value: "Task 2" },
+            description: { value: "Description 2" },
+            slug: { value: "2-task-2" },
+            isDone: true,
+          },
+        ];
+
+        // Setup mock implementation for GetAllTasksUseCase
+        const mockExecute = vi.fn().mockResolvedValue(mockTasks);
+
+        // Mock the FileSystemTaskRepository constructor
+        vi.mocked(FileSystemTaskRepository).mockImplementation(
+          () => ({}) as unknown as FileSystemTaskRepository
+        );
+
+        // Mock the GetAllTasksUseCase
+        vi.mocked(GetAllTasksUseCase).mockImplementation(
+          () =>
+            ({
+              execute: mockExecute,
+            }) as unknown as GetAllTasksUseCase
+        );
+
+        // Extract the handler function from the resource registration
+        const resourceCall = mockResource.mock.calls.find(
+          (call) => call[0] === "tasks"
+        );
+
+        // Ensure the resource was registered
+        expect(resourceCall).toBeDefined();
+        const resourceHandler = resourceCall![2];
+
+        // Create a mock URI
+        const mockUri = new URL("tasks://list");
+
+        // Call the handler
+        const result = await resourceHandler(mockUri);
+
+        // Verify the result
+        expect(result).toEqual({
+          contents: [
+            {
+              uri: "tasks://list",
+              text: "- [ ] Task 1 (1-task-1)\n- [x] Task 2 (2-task-2)",
+            },
+          ],
+        });
+
+        // Verify the use case was called
+        expect(mockExecute).toHaveBeenCalled();
+      });
+
+      it("should handle empty task list", async () => {
+        // Setup mock implementation for GetAllTasksUseCase to return empty array
+        const mockExecute = vi.fn().mockResolvedValue([]);
+
+        // Mock the GetAllTasksUseCase
+        vi.mocked(GetAllTasksUseCase).mockImplementation(
+          () =>
+            ({
+              execute: mockExecute,
+            }) as unknown as GetAllTasksUseCase
+        );
+
+        // Extract the handler function from the resource registration
+        const resourceCall = mockResource.mock.calls.find(
+          (call) => call[0] === "tasks"
+        );
+
+        // Ensure the resource was registered
+        expect(resourceCall).toBeDefined();
+        const resourceHandler = resourceCall![2];
+
+        // Create a mock URI
+        const mockUri = new URL("tasks://list");
+
+        // Call the handler
+        const result = await resourceHandler(mockUri);
+
+        // Verify the result
+        expect(result).toEqual({
+          contents: [
+            {
+              uri: "tasks://list",
+              text: "No tasks found.",
+            },
+          ],
+        });
+      });
+
+      it("should handle errors during task list retrieval", async () => {
+        // Setup mock implementation for GetAllTasksUseCase to throw an error
+        const mockExecute = vi
+          .fn()
+          .mockRejectedValue(new Error("Failed to retrieve tasks"));
+
+        // Mock the GetAllTasksUseCase
+        vi.mocked(GetAllTasksUseCase).mockImplementation(
+          () =>
+            ({
+              execute: mockExecute,
+            }) as unknown as GetAllTasksUseCase
+        );
+
+        // Extract the handler function from the resource registration
+        const resourceCall = mockResource.mock.calls.find(
+          (call) => call[0] === "tasks"
+        );
+
+        // Ensure the resource was registered
+        expect(resourceCall).toBeDefined();
+        const resourceHandler = resourceCall![2];
+
+        // Create a mock URI
+        const mockUri = new URL("tasks://list");
+
+        // Call the handler
+        const result = await resourceHandler(mockUri);
+
+        // Verify the result
+        expect(result).toEqual({
+          contents: [
+            {
+              uri: "tasks://list",
+              text: "Error listing tasks: Failed to retrieve tasks",
+            },
+          ],
         });
       });
     });
