@@ -5,6 +5,7 @@ import { InitializeProjectUseCase } from "../../application/useCases/commands/In
 import { CreateTaskUseCase } from "../../application/useCases/commands/CreateTaskUseCase.js";
 import { SetTaskAsDoneUseCase } from "../../application/useCases/commands/SetTaskAsDoneUseCase.js";
 import { SetTaskAsUndoneUseCase } from "../../application/useCases/commands/SetTaskAsUndoneUseCase.js";
+import { DeleteTaskUseCase } from "../../application/useCases/commands/DeleteTaskUseCase.js";
 import { FileSystemTaskRepository } from "../../infrastructure/repositories/FileSystemTaskRepository.js";
 import { Slug } from "../../domain/valueObjects/Slug.js";
 
@@ -213,6 +214,54 @@ export class MarkTaskDownMcpServer {
               {
                 type: "text",
                 text: `Error marking task as undone: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
+    // Register the delete-task tool
+    this.mcpServer.tool(
+      "delete-task",
+      {
+        // Define parameters schema using zod
+        slug: z.string().min(1, "Slug is required"),
+      },
+      async (params) => {
+        try {
+          // Create repository and use case
+          const taskRepository = new FileSystemTaskRepository();
+          const useCase = new DeleteTaskUseCase(taskRepository);
+
+          // Create a Slug value object from the string parameter
+          const slug = new Slug(params.slug);
+
+          // Execute the use case with the provided slug
+          const task = await useCase.execute(slug);
+
+          // Format the response
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Task deleted: ${task.title.value} (${task.slug.value})`,
+              },
+            ],
+          };
+        } catch (error) {
+          // Handle errors
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Unknown error deleting task";
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error deleting task: ${errorMessage}`,
               },
             ],
             isError: true,

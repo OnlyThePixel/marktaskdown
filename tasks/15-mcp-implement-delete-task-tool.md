@@ -1,6 +1,6 @@
 ---
 title: "MCP: Implement delete-task tool"
-is_done: false
+is_done: true
 ---
 
 # MCP: Implement delete-task tool

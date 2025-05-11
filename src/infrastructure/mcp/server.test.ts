@@ -4,6 +4,7 @@ import { InitializeProjectUseCase } from "../../application/useCases/commands/In
 import { CreateTaskUseCase } from "../../application/useCases/commands/CreateTaskUseCase.js";
 import { SetTaskAsDoneUseCase } from "../../application/useCases/commands/SetTaskAsDoneUseCase.js";
 import { SetTaskAsUndoneUseCase } from "../../application/useCases/commands/SetTaskAsUndoneUseCase.js";
+import { DeleteTaskUseCase } from "../../application/useCases/commands/DeleteTaskUseCase.js";
 import { FileSystemTaskRepository } from "../../infrastructure/repositories/FileSystemTaskRepository.js";
 
 // Create mock functions
@@ -32,6 +33,7 @@ vi.mock("../../application/useCases/commands/InitializeProjectUseCase.js");
 vi.mock("../../application/useCases/commands/CreateTaskUseCase.js");
 vi.mock("../../application/useCases/commands/SetTaskAsDoneUseCase.js");
 vi.mock("../../application/useCases/commands/SetTaskAsUndoneUseCase.js");
+vi.mock("../../application/useCases/commands/DeleteTaskUseCase.js");
 
 // Mock the repositories
 vi.mock("../../infrastructure/repositories/FileSystemTaskRepository.js");
@@ -571,6 +573,110 @@ describe("MarkTaskDownMcpServer", () => {
             {
               type: "text",
               text: "Error marking task as undone: Task not found",
+            },
+          ],
+          isError: true,
+        });
+      });
+    });
+
+    describe("delete-task tool", () => {
+      it("should register the delete-task tool", () => {
+        // Verify that the tool method was called with the correct name
+        expect(mockTool).toHaveBeenCalledWith(
+          "delete-task",
+          expect.any(Object),
+          expect.any(Function)
+        );
+      });
+
+      it("should handle successful task deletion", async () => {
+        // Create mock task
+        const mockTask = {
+          title: { value: "Test Task" },
+          description: { value: "Test Description" },
+          slug: { value: "1-test-task" },
+          isDone: false,
+        };
+
+        // Setup mock implementation for DeleteTaskUseCase
+        const mockExecute = vi.fn().mockResolvedValue(mockTask);
+
+        // Mock the FileSystemTaskRepository constructor
+        vi.mocked(FileSystemTaskRepository).mockImplementation(
+          () => ({}) as unknown as FileSystemTaskRepository
+        );
+
+        // Mock the DeleteTaskUseCase
+        vi.mocked(DeleteTaskUseCase).mockImplementation(
+          () =>
+            ({
+              execute: mockExecute,
+            }) as unknown as DeleteTaskUseCase
+        );
+
+        // Extract the handler function from the tool registration
+        const toolCall = mockTool.mock.calls.find(
+          (call) => call[0] === "delete-task"
+        );
+
+        // Ensure the tool was registered
+        expect(toolCall).toBeDefined();
+        const toolHandler = toolCall![2];
+
+        // Call the handler with parameters
+        const result = await toolHandler({
+          slug: "1-test-task",
+        });
+
+        // Verify the result
+        expect(result).toEqual({
+          content: [
+            {
+              type: "text",
+              text: "Task deleted: Test Task (1-test-task)",
+            },
+          ],
+        });
+
+        // Verify the use case was called with the correct parameters
+        expect(mockExecute).toHaveBeenCalledWith(expect.any(Object));
+      });
+
+      it("should handle errors during task deletion", async () => {
+        // Setup mock implementation for DeleteTaskUseCase to throw an error
+        const mockExecute = vi
+          .fn()
+          .mockRejectedValue(new Error("Task not found"));
+
+        // Mock the DeleteTaskUseCase
+        vi.mocked(DeleteTaskUseCase).mockImplementation(
+          () =>
+            ({
+              execute: mockExecute,
+            }) as unknown as DeleteTaskUseCase
+        );
+
+        // Extract the handler function from the tool registration
+        const toolCall = mockTool.mock.calls.find(
+          (call) => call[0] === "delete-task"
+        );
+
+        // Ensure the tool was registered
+        expect(toolCall).toBeDefined();
+        const toolHandler = toolCall![2];
+
+        // Call the handler
+        const result = await toolHandler({
+          slug: "non-existent-task",
+        });
+
+        // Verify the result
+        expect(result).toEqual({
+          content: [
+            {
+              type: "text",
+              text: "Error deleting task: Task not found",
             },
           ],
           isError: true,
