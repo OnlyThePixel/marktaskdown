@@ -2,8 +2,8 @@
   "mcpServers": {
     "marktaskdown": {
       "command": "mtd",
-      "args": ["mcp"],
-      "disabled": true,
+      "args": ["mcp-server"],
+      "disabled": false,
       "alwaysAllow": []
     }
   }
