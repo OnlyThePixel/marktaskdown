@@ -1,0 +1,22 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    ["./.semantic-release/commit-analyzer.js"],
+    ["./.semantic-release/release-notes-generator.js"],
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md",
+        "changelogTitle": "# Changelog\n\nAll notable changes to this project will be documented in this file."
+      }
+    ],
+    "@semantic-release/npm",
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["package.json", "CHANGELOG.md"],
+        "message": "🔖 Release ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ]
+  ]
+}
