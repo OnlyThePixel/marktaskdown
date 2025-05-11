@@ -1,6 +1,6 @@
 ---
 title: "MCP: Implement initialize-project tool"
-is_done: false
+is_done: true
 ---
 
 # MCP: Implement initialize-project tool

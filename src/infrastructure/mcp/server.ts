@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { InitializeProjectUseCase } from "../../application/useCases/commands/InitializeProjectUseCase.js";
 
 /**
  * MarkTaskDown MCP Server
@@ -31,7 +32,43 @@ export class MarkTaskDownMcpServer {
    * Tools will be implemented in subsequent tasks
    */
   private registerTools(): void {
-    // Tool registrations will be implemented in subsequent tasks
+    // Register the initialize-project tool
+    this.mcpServer.tool(
+      "initialize-project",
+      {}, // No parameters required
+      async () => {
+        try {
+          // Create and execute the use case
+          const useCase = new InitializeProjectUseCase();
+          const result = await useCase.execute();
+
+          // Format the response
+          const message = result.created
+            ? `Project initialized at ${result.tasksDir}`
+            : `Project already initialized at ${result.tasksDir}`;
+
+          return {
+            content: [{ type: "text", text: message }],
+          };
+        } catch (error) {
+          // Handle errors
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Unknown error initializing project";
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error initializing project: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
   }
 
   /**
