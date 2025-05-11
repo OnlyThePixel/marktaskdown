@@ -1,6 +1,6 @@
 ---
 title: "MCP: Update documentation"
-is_done: false
+is_done: true
 ---
 
 # MCP: Update documentation

@@ -140,6 +140,7 @@ Stretch
 - VS Code sidebar via WebView.
 - GitHub Issues sync.
 - AI agent embedding API.
+- Enhanced MCP server capabilities.
 
 ---
 
@@ -169,5 +170,216 @@ Stretch
 
 ---
 
-🚀 You’re set to start coding the prototype.
+## 6. MCP Server
+
+MarkTaskDown includes a Model Context Protocol (MCP) server that allows LLM applications to interact with your tasks.
+
+### What is MCP?
+
+The Model Context Protocol (MCP) is a standard that enables Large Language Models (LLMs) to interact with external tools and resources. With MarkTaskDown's MCP server, LLMs can manage your tasks directly.
+
+### Starting the MCP Server
+
+There are two ways to start the MCP server:
+
+1. Using the CLI command:
+
+   ```bash
+   mtd mcp-server
+   ```
+
+2. Using the standalone entry point (if built as a separate binary):
+   ```bash
+   mtd-mcp
+   ```
+
+Both methods start the server with STDIO transport, allowing LLM applications to interact with your tasks. The server will continue running until you press Ctrl+C.
+
+### Available Tools
+
+The MCP server provides the following tools:
+
+#### initialize-project
+
+Initializes a new MarkTaskDown project.
+
+- **Parameters**: None
+- **Example Response**:
+  ```json
+  {
+    "content": [
+      {
+        "type": "text",
+        "text": "Project initialized at ./tasks"
+      }
+    ]
+  }
+  ```
+- **Error Handling**: Returns an error message if initialization fails
+
+#### create-task
+
+Creates a new task.
+
+- **Parameters**:
+  - `title` (required): The title of the task
+  - `description` (optional): The description of the task
+- **Example Response**:
+  ```json
+  {
+    "content": [
+      {
+        "type": "text",
+        "text": "Task created: Implement new feature (implement-new-feature)"
+      }
+    ]
+  }
+  ```
+- **Error Handling**: Returns an error message if task creation fails
+
+#### set-task-done
+
+Marks a task as done.
+
+- **Parameters**:
+  - `slug` (required): The slug of the task to mark as done
+- **Example Response**:
+  ```json
+  {
+    "content": [
+      {
+        "type": "text",
+        "text": "Task marked as done: Implement new feature (implement-new-feature)"
+      }
+    ]
+  }
+  ```
+- **Error Handling**: Returns an error message if the task cannot be marked as done
+
+#### set-task-undone
+
+Marks a task as undone.
+
+- **Parameters**:
+  - `slug` (required): The slug of the task to mark as undone
+- **Example Response**:
+  ```json
+  {
+    "content": [
+      {
+        "type": "text",
+        "text": "Task marked as undone: Implement new feature (implement-new-feature)"
+      }
+    ]
+  }
+  ```
+- **Error Handling**: Returns an error message if the task cannot be marked as undone
+
+#### delete-task
+
+Deletes a task.
+
+- **Parameters**:
+  - `slug` (required): The slug of the task to delete
+- **Example Response**:
+  ```json
+  {
+    "content": [
+      {
+        "type": "text",
+        "text": "Task deleted: Implement new feature (implement-new-feature)"
+      }
+    ]
+  }
+  ```
+- **Error Handling**: Returns an error message if the task cannot be deleted
+
+### Available Resources
+
+The MCP server provides the following resources:
+
+#### tasks://list
+
+Returns a list of all tasks.
+
+- **URI Pattern**: `tasks://list`
+- **Example Response**:
+  ```json
+  {
+    "contents": [
+      {
+        "uri": "tasks://list",
+        "text": "- [ ] Implement new feature (implement-new-feature)\n- [x] Fix bug (fix-bug)"
+      }
+    ]
+  }
+  ```
+- **Error Handling**: Returns an error message if tasks cannot be listed
+
+#### tasks://{slug}
+
+Returns details of a specific task.
+
+- **URI Pattern**: `tasks://{slug}` (e.g., `tasks://implement-new-feature`)
+- **Example Response**:
+  ```json
+  {
+    "contents": [
+      {
+        "uri": "tasks://implement-new-feature",
+        "text": "# Implement new feature\n\nStatus: Not Done\nSlug: implement-new-feature\n\nAdd the ability to mark tasks as done"
+      }
+    ]
+  }
+  ```
+- **Error Handling**: Returns an error message if the task cannot be found
+
+### Usage Examples
+
+#### Example: Initializing a Project
+
+```javascript
+// Example of using the initialize-project tool
+const response = await mcpClient.tool("initialize-project", {});
+console.log(response.content[0].text); // "Project initialized at ./tasks"
+```
+
+#### Example: Creating and Managing Tasks
+
+```javascript
+// Create a new task
+const createResponse = await mcpClient.tool("create-task", {
+  title: "Implement new feature",
+  description: "Add the ability to mark tasks as done",
+});
+console.log(createResponse.content[0].text); // "Task created: Implement new feature (implement-new-feature)"
+
+// Mark the task as done
+const doneResponse = await mcpClient.tool("set-task-done", {
+  slug: "implement-new-feature",
+});
+console.log(doneResponse.content[0].text); // "Task marked as done: Implement new feature (implement-new-feature)"
+```
+
+#### Example: Retrieving Task Information
+
+```javascript
+// Get a list of all tasks
+const listResponse = await mcpClient.resource("tasks://list");
+console.log(listResponse.contents[0].text);
+// "- [ ] Implement new feature (implement-new-feature)
+// - [x] Fix bug (fix-bug)"
+
+// Get details of a specific task
+const taskResponse = await mcpClient.resource("tasks://implement-new-feature");
+console.log(taskResponse.contents[0].text);
+// "# Implement new feature
+//
+// Status: Not Done
+// Slug: implement-new-feature
+//
+// Add the ability to mark tasks as done"
+```
+
+🚀 You're set to start coding the prototype.
 The doc is a living spec—iterate freely as insights emerge!

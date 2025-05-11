@@ -84,6 +84,39 @@ MarkTaskDown follows [Domain-Driven Design (DDD)](https://en.wikipedia.org/wiki/
 
 This project follows Test-Driven Development (TDD) practices. See [docs/README.md](docs/README.md) for the detailed product requirements and [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for development guidelines.
 
+## MCP Server
+
+MarkTaskDown includes a Model Context Protocol (MCP) server that allows LLM applications to interact with your tasks.
+
+### What is MCP?
+
+The Model Context Protocol (MCP) is a standard that enables Large Language Models (LLMs) to interact with external tools and resources. With MarkTaskDown's MCP server, LLMs can manage your tasks directly.
+
+### Starting the MCP Server
+
+```bash
+mtd mcp-server
+```
+
+This command starts the MCP server with STDIO transport, allowing LLM applications to interact with your tasks. The server will continue running until you press Ctrl+C.
+
+### Available Tools and Resources
+
+The MCP server provides the following tools:
+
+- `initialize-project`: Initialize a new MarkTaskDown project
+- `create-task`: Create a new task
+- `set-task-done`: Mark a task as done
+- `set-task-undone`: Mark a task as undone
+- `delete-task`: Delete a task
+
+And the following resources:
+
+- `tasks://list`: Get a list of all tasks
+- `tasks://{slug}`: Get details of a specific task
+
+For more detailed information about the MCP server, see [docs/README.md](docs/README.md).
+
 ## License
 
 MIT
