@@ -1,4 +1,4 @@
-Execute the next available task at ADD_TASKS_FOLDER_CONTEXT
+Execute the next available task (checkout "tasks" resource)
 
 ## Task Context
 
@@ -31,8 +31,8 @@ Follow the TDD Red-Green-Refactor methodology:
 1. Run tests to verify they fail before implementation (to avoid false positives)
 2. Implement the required functionality
 3. Run tests to ensure they pass
-4. Mark the task as done using the `mtd done <task-slug>` command (use the exact slug from the task file)
-5. Commit implementation changes using the appropriate gitmoji prefix (🏗️ for infrastructure, ✨ for features)
+4. Mark the task as done using the `set-task-done` tool (use the exact slug from the task file)
+5. Commit implementation changes using the appropriate gitmoji prefix (checkout the [.gitmessage](./.gitmessage) file)
 6. Commit task file updates separately using the 📝 gitmoji
 
 ## Definition of Done
