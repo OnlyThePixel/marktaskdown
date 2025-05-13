@@ -11,5 +11,5 @@ if [ -n "$STAGED_FILES" ]; then
   echo "$STAGED_FILES" | xargs git add
 fi
 
-# Run tests and build
-npm run test && npm run build
+# Run build and then tests
+npm run build && npm run test

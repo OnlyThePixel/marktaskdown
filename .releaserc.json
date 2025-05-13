@@ -17,8 +17,12 @@
       {
         "assets": [
           {
-            "path": "dist/**",
-            "label": "Distribution"
+            "path": "dist/ui/cli/index.js",
+            "label": "CLI Entry Point"
+          },
+          {
+            "path": "dist/infrastructure/mcp/index.js",
+            "label": "MCP Entry Point"
           }
         ],
         "successComment": "🎉 This ${issue.pull_request ? 'PR is included' : 'issue is fixed'} in version ${nextRelease.version}",
