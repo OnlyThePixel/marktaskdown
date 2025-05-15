@@ -1,6 +1,6 @@
 {
   "name": "marktaskdown",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A lightweight CLI for task management based on Markdown files",
   "license": "MIT",
   "author": "MarkTaskDown Team",

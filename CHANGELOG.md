@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+# 1.0.2 (2025-05-15)
+
+## 🔧 Configuration
+
+- `8076994` Fix GitHub release configuration by removing duplicate assets
+
+## 🚚 Chores
+
+- `7138937` Merge branch 'main' of https://github.com/OnlyThePixel/marktaskdown into main
+
 # 1.0.1 (2025-05-15)
 
 ## 📝 Documentation
