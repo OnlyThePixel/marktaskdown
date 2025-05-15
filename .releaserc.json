@@ -15,16 +15,6 @@
     [
       "@semantic-release/github",
       {
-        "assets": [
-          {
-            "path": "dist/ui/cli/index.js",
-            "label": "CLI Entry Point"
-          },
-          {
-            "path": "dist/infrastructure/mcp/index.js",
-            "label": "MCP Entry Point"
-          }
-        ],
         "successComment": "🎉 This ${issue.pull_request ? 'PR is included' : 'issue is fixed'} in version ${nextRelease.version}",
         "failComment": "❌ The release failed with this error: ${error.message}"
       }
