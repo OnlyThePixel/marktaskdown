@@ -7,9 +7,11 @@ STAGED_FILES=$(git diff --name-only --cached)
 npm run lint:fix
 
 # Re-stage only the files that were previously staged
-if [ -n "$STAGED_FILES" ]; then
-  echo "$STAGED_FILES" | xargs git add
-fi
+echo "$STAGED_FILES" | while read file; do
+  if [ -f "$file" ]; then
+    git add "$file"
+  fi
+done
 
 # Run build and then tests
 npm run build && npm run test
