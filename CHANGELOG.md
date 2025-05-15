@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+# 1.0.1 (2025-05-15)
+
+## 📝 Documentation
+
+- `5d3c4f5` Set up Docusaurus in the docs directory
+
+## 🔧 Configuration
+
+- `ceae75f` Fix GitHub release assets configuration and update pre-commit hook
+
+## 🚚 Chores
+
+- `6da028b` Add tasks to implement project website
+
 # 1.0.0 (2025-05-12)
 
 ## ✨ Features
