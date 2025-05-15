@@ -1,6 +1,6 @@
 ---
 title: Set up Docusaurus in the docs directory
-is_done: false
+is_done: true
 ---
 
 # Objective
